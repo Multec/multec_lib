@@ -13,7 +13,9 @@ public class HelloWorld extends SGWindow {
 	
 	public static void main(String[] args) {
 		// Launch the HelloWorld program.
-		new HelloWorld().open("Hello World", 50, 30, 300, 300, new Color(0xFFCC00));
+		HelloWorld app = new HelloWorld();
+		app.setRenderer(P2D);
+		app.open("Hello World", 50, 30, 300, 300, new Color(0xFFCC00));
 	}
 	
 	// *********************************************************************************************

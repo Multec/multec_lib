@@ -3,13 +3,15 @@ package tests;
 import java.awt.Color;
 import java.awt.Rectangle;
 
-import processing.core.PApplet;
+import be.multec.sg.SGApp;
 import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
 import be.multec.sg.d2.SGRect;
 
 /**
  * A demo of the caching functionality.
+ * 
+ * TODO: This functionality is currently not fully operational.
  * 
  * @author Wouter Van den Broeck
  */
@@ -20,7 +22,7 @@ public class CacheDemo extends SGWindow {
 	// ---------------------------------------------------------------------------------------------
 	
 	public static void main(String[] args) {
-		new CacheDemo().open("CacheDemo", 50, 30, 800, 600, new Color(0xFFFFFF));
+		new CacheDemo().open("Cache Demo", 50, 30, 800, 600, new Color(0xFFFFFF));
 	}
 	
 	// *********************************************************************************************
@@ -50,7 +52,7 @@ public class CacheDemo extends SGWindow {
 	
 	class Node_A extends SGNode {
 		
-		public Node_A(PApplet app, String ext) {
+		public Node_A(SGApp app, String ext) {
 			super(app);
 			
 			SGNode node = new SGRect(app, 80, 100, new Color(0xFFCC00), Color.BLACK, 10);
@@ -60,7 +62,7 @@ public class CacheDemo extends SGWindow {
 		}
 		
 	}
-
+	
 	// *********************************************************************************************
 	// Support methods:
 	// ---------------------------------------------------------------------------------------------

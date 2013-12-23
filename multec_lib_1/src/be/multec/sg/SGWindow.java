@@ -1,15 +1,11 @@
 package be.multec.sg;
 
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -69,6 +65,9 @@ public class SGWindow extends SGApp {
 	public static int defaultWindowY = 30;
 	
 	// ---------------------------------------------------------------------------------------------
+	// application state:
+	
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
 	/* The title of this application. This title is also shown in the header of the window. */
 	private String title;
@@ -107,12 +106,18 @@ public class SGWindow extends SGApp {
 	private String renderer = JAVA2D;
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// system properties:
+	// application state:
 	
-	/** True when the window is being closed. */
+	// True when the application was started.
+	private boolean started = false;
+	
+	// True when the application window is being closed.
 	private boolean closing = false;
 	
-	/**
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	// system properties:
+	
+	/*
 	 * True when the frame should be disposed when the app is disposed. This value is false when the
 	 * shutdown-hook set in the constructor is triggered, in which case the frame is already
 	 * disposed or is about to be disposed.
@@ -173,22 +178,37 @@ public class SGWindow extends SGApp {
 	}
 	
 	// *********************************************************************************************
-	// Accessors:
+	// Setters to use before opening the application:
 	// ---------------------------------------------------------------------------------------------
 	
 	/**
 	 * Use this method before opening the window, i.e. before calling the open() or openFullscreen()
-	 * method. The default renderer in Processing 2 is JAVA2D, a pure software renderer. You can
-	 * set one of the following alternative render contexts:
+	 * method. The default renderer in Processing 2 is JAVA2D, a pure software renderer. You can set
+	 * one of the following alternative render contexts:
 	 * <ul>
-	 * <li>PConstants.P2D: hardware accelerated 2D</li>
-	 * <li>PConstants.P3D: hardware accelerated 3D (see http://processing.org/tutorials/p3d/)</li>
+	 * <li>PConstants.JAVA2D: software renderer (the default)</li>
+	 * <li>PConstants.P2D: hardware accelerated 2D (see http://processing.org/tutorials/p3d/)</li>
 	 * </ul>
 	 * 
-	 * @param renderer the renderer to set. Either P2D or P3D (of OPENGL).
+	 * The P3D renderer cannot be used because 3D content is currently not supported in this
+	 * framework.
+	 * 
+	 * @param renderer the renderer to set.
+	 * 
+	 * @see PConstants#JAVA2D
+	 * @see PConstants#P2D
 	 */
 	public void setRenderer(String renderer) {
-		this.renderer = renderer;
+		if (started) throw new Error("Set the renderer before opening the application window.");
+		if (renderer == PConstants.JAVA2D || renderer == PConstants.P2D) this.renderer = renderer;
+		else throw new Error("Invalid renderer '" + renderer + "'. Must be either JAVA2D or P2D.");
+	}
+	
+	/**
+	 * @return The renderer set before opening the window.
+	 */
+	public String getRenderer() {
+		return renderer;
 	}
 	
 	// *********************************************************************************************
@@ -204,6 +224,7 @@ public class SGWindow extends SGApp {
 	 * @param bgColor the background color of the window
 	 */
 	public void open(String title, int contentW, int contentH, Color bgColor) {
+		started = true;
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		GraphicsDevice display = ge.getScreenDevices()[0];
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
@@ -224,6 +245,7 @@ public class SGWindow extends SGApp {
 	 * @param bgColor the background color of the window
 	 */
 	public void open(String title, int x, int y, int contentW, int contentH, Color bgColor) {
+		started = true;
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		GraphicsDevice display = ge.getScreenDevices()[0];
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
@@ -244,6 +266,7 @@ public class SGWindow extends SGApp {
 	 *            display when present has index 1, etc.
 	 */
 	public void open(String title, int contentW, int contentH, int displayIndex, Color bgColor) {
+		started = true;
 		GraphicsDevice display = getDisplay(displayIndex);
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
 		this.contentWidth = contentW;
@@ -267,6 +290,7 @@ public class SGWindow extends SGApp {
 	public void open(String title, int x, int y, int contentW, int contentH, int displayIndex,
 			Color bgColor)
 	{
+		started = true;
 		GraphicsDevice display = getDisplay(displayIndex);
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
 		this.contentWidth = contentW;
@@ -286,6 +310,7 @@ public class SGWindow extends SGApp {
 	 */
 	public void open(String title, int contentW, int contentH, GraphicsDevice display, Color bgColor)
 	{
+		started = true;
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
 		this.contentWidth = contentW;
 		this.contentHeight = contentH;
@@ -307,6 +332,7 @@ public class SGWindow extends SGApp {
 	public void open(String title, int x, int y, int contentW, int contentH,
 			GraphicsDevice display, Color bgColor)
 	{
+		started = true;
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
 		this.contentWidth = contentW;
 		this.contentHeight = contentH;
@@ -325,6 +351,7 @@ public class SGWindow extends SGApp {
 	 * @param bgColor the background color of the window
 	 */
 	public void openFullscreen(Color bgColor) {
+		started = true;
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		GraphicsDevice display = ge.getScreenDevices()[0];
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
@@ -342,6 +369,7 @@ public class SGWindow extends SGApp {
 	 *            display when present has index 1, etc.
 	 */
 	public void openFullscreen(Color bgColor, int displayIndex) {
+		started = true;
 		GraphicsDevice display = getDisplay(displayIndex);
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
 		initFullscreenStage(gc);
@@ -357,6 +385,7 @@ public class SGWindow extends SGApp {
 	 * @param display the representation of the display device on which to show the window
 	 */
 	public void openFullscreen(Color bgColor, GraphicsDevice display) {
+		started = true;
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
 		initFullscreenStage(gc);
 		setBackground(bgColor);
@@ -372,6 +401,7 @@ public class SGWindow extends SGApp {
 	 * @param bgColor the background color of the window
 	 */
 	public void openFullscreen(int contentW, int contentH, Color bgColor) {
+		started = true;
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		GraphicsDevice display = ge.getScreenDevices()[0];
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
@@ -391,6 +421,7 @@ public class SGWindow extends SGApp {
 	 *            display when present has index 1, etc.
 	 */
 	public void openFullscreen(int contentW, int contentH, Color bgColor, int displayIndex) {
+		started = true;
 		GraphicsDevice display = getDisplay(displayIndex);
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
 		initStage(gc, contentW, contentH);
@@ -409,6 +440,7 @@ public class SGWindow extends SGApp {
 	 * @param display the representation of the display device on which to show the window
 	 */
 	public void openFullscreen(int contentW, int contentH, Color bgColor, GraphicsDevice display) {
+		started = true;
 		GraphicsConfiguration gc = display.getDefaultConfiguration();
 		initStage(gc, contentW, contentH);
 		setBackground(bgColor);
@@ -472,6 +504,8 @@ public class SGWindow extends SGApp {
 		addSceneGraph(frame, this);
 		
 		init();
+		
+		smooth(8);
 	}
 	
 	private void initFrame(GraphicsConfiguration gc) {
@@ -765,75 +799,15 @@ public class SGWindow extends SGApp {
 		super.draw();
 	}
 	
-	/* @see be.multec.sg.SGApp#preDraw() */
-	@Override
-	protected void preDraw() {
-		if (backgroundColor != null)
-			background(backgroundColor.getRGB(), backgroundColor.getAlpha());
+	/**
+	 * Called by the Processing event system right before draw is called.
+	 */
+	public void pre() {
+		background(backgroundColor.getRGB(), backgroundColor.getAlpha());
 	}
 	
 	// ---------------------------------------------------------------------------------------------
-	// Mouse event handlers:
-	
-	@Override
-	public void mouseClicked(MouseEvent e) {
-		if (closing) return;
-		super.mouseClicked(e);
-	}
-	
-	@Override
-	public void mousePressed(MouseEvent e) {
-		if (closing) return;
-		super.mousePressed(e);
-	}
-	
-	@Override
-	public void mouseReleased(MouseEvent e) {
-		if (closing) return;
-		super.mouseReleased(e);
-	}
-	
-	@Override
-	public void mouseMoved(MouseEvent e) {
-		if (closing) return;
-		super.mouseMoved(e);
-	}
-	
-	@Override
-	public void mouseDragged(MouseEvent e) {
-		if (closing) return;
-		super.mouseDragged(e);
-	}
-	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// TODO
-	
-	@Override
-	public void mouseEntered(MouseEvent e) {
-		if (closing) return;
-		super.mouseEntered(e);
-	}
-	
-	@Override
-	public void mouseExited(MouseEvent e) {
-		if (closing) return;
-		super.mouseExited(e);
-	}
-	
-	@Override
-	public void mouseWheelMoved(MouseWheelEvent e) {
-		if (closing) return;
-		super.mouseWheelMoved(e);
-	}
-	
-	@Override
-	public void mouseWheel(processing.event.MouseEvent event) {
-		if (closing) return;
-		super.mouseWheel(event);
-	}
-	
-	// ---------------------------------------------------------------------------------------------
-	// Mouse event handlers:
+	// Key event handlers:
 	
 	@Override
 	public void keyTyped(KeyEvent e) {
@@ -857,6 +831,13 @@ public class SGWindow extends SGApp {
 	// Accessors:
 	// ---------------------------------------------------------------------------------------------
 	
+	/**
+	 * @return True when the application was started.
+	 */
+	public boolean started() {
+		return started;
+	}
+	
 	/** @return The underlying Java AWT Frame object. */
 	public Frame getFrame() {
 		return frame;
@@ -879,6 +860,12 @@ public class SGWindow extends SGApp {
 	/* @see java.awt.Component#setBackground(java.awt.Color) */
 	public void setBackground(Color color) {
 		backgroundColor = color;
+		if (color != null) {
+			registerMethod("pre", this);
+		}
+		else {
+			unregisterMethod("pre", this);
+		}
 		redraw();
 	}
 	

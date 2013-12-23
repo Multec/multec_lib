@@ -21,19 +21,19 @@ abstract public class SGFigure extends SGNode {
 	// ---------------------------------------------------------------------------------------------
 	
 	/* When true then this form should be drawn with a fill. @see setFilled */
-	protected boolean filled = false;
+	private boolean filled = false;
 	
 	/* When true then this form should be drawn with a stroke. @see setStroked */
-	protected boolean stroked = false;
+	private boolean stroked = false;
 	
 	/* The fill color. */
-	protected Color fillColor = new Color(0xFF999999, true);
+	protected Color fillColor; // = new Color(0xFF999999, true);
 	
 	/* The stroke color. */
-	protected Color strokeColor = new Color(0xFF000000, true);
+	protected Color strokeColor; // = new Color(0xFF000000, true);
 	
 	/* The stroke weight. */
-	protected float strokeWeight = 1;
+	private float strokeWeight = 1;
 	
 	/* The blend-mode. @see setBlendMode */
 	protected int blendMode = BLEND;
@@ -45,7 +45,7 @@ abstract public class SGFigure extends SGNode {
 	/**
 	 * @param app The PApplet object.
 	 */
-	public SGFigure(PApplet app) {
+	public SGFigure(SGApp app) {
 		super(app);
 	}
 	
@@ -53,9 +53,10 @@ abstract public class SGFigure extends SGNode {
 	 * @param app The PApplet object.
 	 * @param fillColor The fill color.
 	 */
-	public SGFigure(PApplet app, Color fillColor) {
+	public SGFigure(SGApp app, Color fillColor) {
 		super(app);
 		this.fillColor = fillColor;
+		filled = true;
 	}
 	
 	/**
@@ -64,11 +65,13 @@ abstract public class SGFigure extends SGNode {
 	 * @param strokeColor The stroke color.
 	 * @param strokeWeight The thickness of the stroke.
 	 */
-	public SGFigure(PApplet app, Color fillColor, Color strokeColor, float strokeWeight) {
+	public SGFigure(SGApp app, Color fillColor, Color strokeColor, float strokeWeight) {
 		super(app);
 		this.fillColor = fillColor;
 		this.strokeColor = strokeColor;
 		this.strokeWeight = strokeWeight;
+		filled = true;
+		stroked = true;
 	}
 	
 	private void initSGFigure() {}
@@ -99,7 +102,7 @@ abstract public class SGFigure extends SGNode {
 	public void noFill() {
 		if (!filled) return;
 		filled = false;
-		invalidateContent();
+		redraw();
 	}
 	
 	/**
@@ -111,7 +114,11 @@ abstract public class SGFigure extends SGNode {
 		if (filled && (fillColor == color || fillColor.equals(color))) return;
 		filled = true;
 		fillColor = color;
-		invalidateContent();
+		redraw();
+	}
+	
+	public void fill(int r, int g, int b) {
+		fill(new Color(r, g, b));
 	}
 	
 	// *********************************************************************************************
@@ -140,8 +147,8 @@ abstract public class SGFigure extends SGNode {
 	public void noStroke() {
 		if (!stroked) return;
 		stroked = false;
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 	}
 	
 	/**
@@ -151,10 +158,10 @@ abstract public class SGFigure extends SGNode {
 	 */
 	public void stroke(Color color) {
 		if (stroked && (strokeColor == color || strokeColor.equals(color))) return;
-		if (!stroked) invalidateBounds(true);
+		if (!stroked) invalidateLocalBounds();
 		stroked = true;
 		strokeColor = color;
-		invalidateContent();
+		redraw();
 	}
 	
 	/**
@@ -167,11 +174,11 @@ abstract public class SGFigure extends SGNode {
 	public void stroke(Color color, float weight) {
 		if (stroked && (strokeColor == color || strokeColor.equals(color))
 				&& strokeWeight == weight) return;
-		if (!stroked || strokeWeight != weight) invalidateBounds(true);
+		if (!stroked || strokeWeight != weight) invalidateLocalBounds();
 		stroked = true;
 		strokeColor = color;
 		strokeWeight = weight;
-		invalidateContent();
+		redraw();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -190,8 +197,8 @@ abstract public class SGFigure extends SGNode {
 		if (strokeWeight == weight) return;
 		strokeWeight = weight;
 		if (stroked) {
-			invalidateContent();
-			invalidateBounds(true);
+			redraw();
+			invalidateLocalBounds();
 		}
 	}
 	
@@ -217,7 +224,7 @@ abstract public class SGFigure extends SGNode {
 	public void blendMode(int blendMode) {
 		if (this.blendMode == blendMode) return;
 		this.blendMode = blendMode;
-		invalidateContent();
+		redraw();
 	}
 	
 	// *********************************************************************************************

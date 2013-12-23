@@ -3,8 +3,8 @@ package tests;
 import java.awt.Color;
 import java.awt.Rectangle;
 
-import processing.core.PApplet;
 import processing.core.PGraphics;
+import be.multec.sg.SGApp;
 import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
 import be.multec.sg.d2.SGImage;
@@ -91,14 +91,13 @@ public class BoundedImageDemo extends SGWindow {
 	 */
 	class Outlined extends SGNode {
 		
-		public Outlined(PApplet app, SGNode node) {
+		public Outlined(SGApp app, SGNode node) {
 			super(app);
-			maintainBounds();
 			addNode(node);
 			addModifier(new IModifier() {
 				@Override
 				public void apply(SGNode node) {
-					node.invalidateContentFromUpdate();
+					node.redraw();
 				}
 			});
 		}
@@ -106,8 +105,8 @@ public class BoundedImageDemo extends SGWindow {
 		/* @see be.multec.sg.d2.SGRect#draw(processing.core.PGraphics) */
 		@Override
 		protected void draw(PGraphics g) {
-			Rectangle bounds = getBounds();
-			// System.out.println("- bounds: " + rectStr(bounds));
+			Rectangle bounds = getCompositeBounds();
+			 System.out.println("- bounds: " + rectStr(bounds));
 			g.noFill();
 			g.stroke(0xFFBE0000);
 			g.strokeWeight(1);

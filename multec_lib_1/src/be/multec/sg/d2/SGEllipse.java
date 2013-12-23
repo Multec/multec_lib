@@ -3,8 +3,8 @@ package be.multec.sg.d2;
 import java.awt.Color;
 import java.awt.Rectangle;
 
-import processing.core.PApplet;
 import processing.core.PGraphics;
+import be.multec.sg.SGApp;
 import be.multec.sg.SGFigure;
 
 /**
@@ -40,11 +40,10 @@ public class SGEllipse extends SGFigure {
 	 * @param diamY The vertical diameter of the ellipse.
 	 * @param fillColor The fill color.
 	 */
-	public SGEllipse(PApplet app, float diamX, float diamY, Color fillColor) {
+	public SGEllipse(SGApp app, float diamX, float diamY, Color fillColor) {
 		super(app, fillColor);
 		this.diamX = diamX;
 		this.diamY = diamY;
-		filled = true;
 	}
 	
 	/**
@@ -52,10 +51,9 @@ public class SGEllipse extends SGFigure {
 	 * @param diam The diameter of the circular ellipse.
 	 * @param fillColor The fill color.
 	 */
-	public SGEllipse(PApplet app, float diam, Color fillColor) {
+	public SGEllipse(SGApp app, float diam, Color fillColor) {
 		super(app, fillColor);
 		this.diamX = this.diamY = diam;
-		filled = true;
 	}
 	
 	/**
@@ -66,14 +64,12 @@ public class SGEllipse extends SGFigure {
 	 * @param strokeColor
 	 * @param strokeWeight
 	 */
-	public SGEllipse(PApplet app, float diamX, float diamY, Color fillColor, Color strokeColor,
+	public SGEllipse(SGApp app, float diamX, float diamY, Color fillColor, Color strokeColor,
 			int strokeWeight)
 	{
 		super(app, fillColor, strokeColor, strokeWeight);
 		this.diamX = diamX;
 		this.diamY = diamY;
-		filled = true;
-		stroked = true;
 	}
 	
 	/**
@@ -83,12 +79,9 @@ public class SGEllipse extends SGFigure {
 	 * @param strokeColor
 	 * @param strokeWeight
 	 */
-	public SGEllipse(PApplet app, float diam, Color fillColor, Color strokeColor, int strokeWeight)
-	{
+	public SGEllipse(SGApp app, float diam, Color fillColor, Color strokeColor, int strokeWeight) {
 		super(app, fillColor, strokeColor, strokeWeight);
 		this.diamX = this.diamY = diam;
-		filled = true;
-		stroked = true;
 	}
 	
 	// *********************************************************************************************
@@ -109,8 +102,8 @@ public class SGEllipse extends SGFigure {
 	public SGEllipse setDiamX(float diamX) {
 		if (this.diamX == diamX) return this;
 		this.diamX = diamX;
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 		return this;
 	}
 	
@@ -128,8 +121,8 @@ public class SGEllipse extends SGFigure {
 	public SGEllipse setDiamY(float diamY) {
 		if (this.diamY == diamY) return this;
 		this.diamY = diamY;
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 		return this;
 	}
 	
@@ -144,8 +137,8 @@ public class SGEllipse extends SGFigure {
 		if (this.diamX == diamX && this.diamY == diamY) return this;
 		this.diamX = diamX;
 		this.diamY = diamY;
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 		return this;
 	}
 	
@@ -159,8 +152,8 @@ public class SGEllipse extends SGFigure {
 		if (this.diamX == diam && this.diamY == diam) return this;
 		this.diamX = diam;
 		this.diamY = diam;
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 		return this;
 	}
 	
@@ -180,8 +173,8 @@ public class SGEllipse extends SGFigure {
 	public SGEllipse setCenterX(float centerX) {
 		if (this.centerX == centerX) return this;
 		this.centerX = centerX;
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 		return this;
 	}
 	
@@ -199,8 +192,8 @@ public class SGEllipse extends SGFigure {
 	public SGEllipse setCenterY(float centerY) {
 		if (this.centerY == centerY) return this;
 		this.centerY = centerY;
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 		return this;
 	}
 	
@@ -212,8 +205,8 @@ public class SGEllipse extends SGFigure {
 		if (this.centerX == centerX && this.centerY == centerY) return this;
 		this.centerX = centerX;
 		this.centerY = centerY;
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 		return this;
 	}
 	
@@ -224,20 +217,22 @@ public class SGEllipse extends SGFigure {
 	/* @see be.multec.sg.d2.SG2DNode#draw(processing.core.PGraphics) */
 	@Override
 	protected void draw(PGraphics g) {
+		g.ellipseMode(CENTER);
 		g.ellipse(centerX, centerY, diamX, diamY);
 	}
 	
 	/* @see be.multec.sg.SGNode#updateLocalBounds(java.awt.Rectangle) */
 	@Override
 	protected void updateLocalBounds(Rectangle bounds) {
-		if (stroked) {
-			bounds.x = (int) Math.floor(-(diamX + strokeWeight) / 2);
-			bounds.y = (int) Math.floor(-(diamY + strokeWeight) / 2);
-			bounds.width = (int) Math.ceil(diamX + strokeWeight);
-			bounds.height = (int) Math.ceil(diamY + strokeWeight);
+		if (stroked()) {
+			bounds.x = (int) Math.floor(centerX - (diamX + strokeWeight()) / 2);
+			bounds.y = (int) Math.floor(centerY - (diamY + strokeWeight()) / 2);
+			bounds.width = (int) Math.ceil(diamX + strokeWeight());
+			bounds.height = (int) Math.ceil(diamY + strokeWeight());
 		}
 		else {
-			bounds.x = bounds.y = 0;
+			bounds.x = (int) Math.floor(centerX - diamX / 2);
+			bounds.y = (int) Math.floor(centerY - diamY / 2);
 			bounds.width = (int) Math.ceil(diamX);
 			bounds.height = (int) Math.ceil(diamY);
 		}

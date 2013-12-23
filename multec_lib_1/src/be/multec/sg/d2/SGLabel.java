@@ -748,7 +748,7 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 	public void setTextColor(Color color) {
 		if (this.textColor.equals(color)) return;
 		this.textColor = color;
-		invalidateContent();
+		redraw();
 	}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -895,7 +895,7 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 		if (drawBackground && this.bgColor.equals(backgroundColor)) return this;
 		this.bgColor = backgroundColor;
 		drawBackground = true;
-		invalidateContent();
+		redraw();
 		return this;
 	}
 	
@@ -903,7 +903,7 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 	public void clearBackground() {
 		drawBackground = false;
 		bgColor = null;
-		invalidateContent();
+		redraw();
 	}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -922,7 +922,7 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 	public SGLabel setBlendMode(int blendMode) {
 		if (this.blendMode == blendMode) return this;
 		this.blendMode = blendMode;
-		invalidateContent();
+		redraw();
 		return this;
 	}
 	
@@ -1056,14 +1056,9 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 	
 	/* @see be.multec.sg.SGNode#mouseHitTest() */
 	@Override
-	protected boolean mouseHitTest() {
+	protected boolean contains(float x, float y) {
 		if (LblWidth == 0 || LblHeight == 0) return false;
-		float tx = getMouseX();
-		if (tx >= 0 && tx < LblWidth) {
-			float ty = getMouseY();
-			return ty >= 0 && ty < LblHeight;
-		}
-		return false;
+		return x >= 0 && x < LblWidth && y >= 0 && y < LblHeight;
 	}
 	
 	// *********************************************************************************************
@@ -1082,8 +1077,8 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 	// ---------------------------------------------------------------------------------------------
 	
 	private void invalidateLabel() {
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 	}
 	
 }

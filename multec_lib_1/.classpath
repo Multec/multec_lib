@@ -2,7 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry exported="true" kind="lib" path="libs/core/core.jar" sourcepath="/Users/wouter/EhB/Code/support/processing/core"/>
 	<classpathentry kind="lib" path="libs/core/gluegen-rt-natives-linux-amd64.jar"/>
 	<classpathentry kind="lib" path="libs/core/gluegen-rt-natives-linux-armv6hf.jar"/>
 	<classpathentry kind="lib" path="libs/core/gluegen-rt-natives-linux-i586.jar"/>

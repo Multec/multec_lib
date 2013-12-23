@@ -4,7 +4,10 @@ import java.awt.Color;
 
 import processing.core.PGraphics;
 import processing.core.PImage;
+import processing.core.PVector;
 import be.multec.sg.SGApp;
+import be.multec.sg.SGMouseEventHandler;
+import be.multec.sg.SGNode;
 
 /**
  * A node that includes a button. Mouse events can be captured by overriding the appropriate methods
@@ -45,7 +48,7 @@ public class SGButton extends SGRect {
 		
 		this.outColor = outColor;
 		this.overColor = overColor;
-		enableMouseEvents();
+		init();
 	}
 	
 	/**
@@ -65,7 +68,7 @@ public class SGButton extends SGRect {
 		this.overColor = overColor;
 		this.icon = image;
 		showIcon = true;
-		enableMouseEvents();
+		init();
 	}
 	
 	/**
@@ -85,7 +88,27 @@ public class SGButton extends SGRect {
 		this.overColor = overColor;
 		this.icon = app.loadImage(path);
 		showIcon = true;
-		enableMouseEvents();
+		init();
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	private void init() {
+		addMouseEventHandler(new SGMouseEventHandler() {
+			
+			/* @see be.multec.sg.SGMouseEventHandler#mouseOver(be.multec.sg.SGNode) */
+			@Override
+			protected void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
+				fill(overColor);
+			}
+			
+			/* @see be.multec.sg.SGMouseEventHandler#mouseOut(be.multec.sg.SGNode) */
+			@Override
+			protected void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
+				fill(outColor);
+			}
+			
+		});
 	}
 	
 	// *********************************************************************************************
@@ -95,7 +118,7 @@ public class SGButton extends SGRect {
 	public SGButton setIcon(String path) {
 		this.icon = app.loadImage(path);
 		showIcon = true;
-		invalidateContent();
+		redraw();
 		return this;
 	}
 	
@@ -103,21 +126,9 @@ public class SGButton extends SGRect {
 		if (this.icon != icon) {
 			this.icon = icon;
 			showIcon = true;
-			invalidateContent();
+			redraw();
 		}
 		return this;
-	}
-	
-	// ---------------------------------------------------------------------------------------------
-	
-	@Override
-	protected void mouseOver() {
-		fill(overColor);
-	}
-	
-	@Override
-	protected void mouseOut() {
-		fill(outColor);
 	}
 	
 	// ---------------------------------------------------------------------------------------------

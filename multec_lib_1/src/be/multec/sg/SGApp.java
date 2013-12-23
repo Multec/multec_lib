@@ -1,11 +1,15 @@
 package be.multec.sg;
 
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
 
 import processing.core.PApplet;
 import processing.core.PConstants;
 import processing.core.PGraphics;
+import processing.core.PMatrix;
+import processing.core.PMatrix2D;
+import processing.core.PMatrix3D;
+import processing.core.PVector;
+import processing.event.MouseEvent;
 
 /**
  * Base class for scene-graph applets. These specialized Processing-applets provide a scene-graph
@@ -37,7 +41,10 @@ public class SGApp extends PApplet {
 	private SGStage stage;
 	
 	/* True when the update traversal is active. */
-	private boolean updateActive = false;
+	boolean updateActive = false;
+	
+	/* False as long as the PApplet.draw() method was not called for the first time. */
+	private boolean setupComplete = false;
 	
 	// *********************************************************************************************
 	// Constructors:
@@ -49,6 +56,7 @@ public class SGApp extends PApplet {
 		
 		// Intialize the stage (the root of the scene-graph):
 		stage = new SGStage(this);
+		// registerMethod("keyEvent", this);
 	}
 	
 	/**
@@ -58,6 +66,8 @@ public class SGApp extends PApplet {
 	public void dispose() {
 		stop();
 		noLoop();
+		unregisterMethod("mouseEvent", this);
+		// unregisterMethod("keyEvent", this);
 		stage.dispose(true);
 		stage = null;
 		super.dispose();
@@ -95,86 +105,150 @@ public class SGApp extends PApplet {
 	@Override
 	public void draw() {
 		// System.out.println("\n>> SGApp.draw()");
+		
+		if (!setupComplete) {
+			stageMouseMatrix = g.getMatrix();
+			registerMethod("mouseEvent", this);
+			setupComplete = true;
+		}
+		
+		if (mouseX != pmouseX || mouseY != pmouseY) stageMouseVectorDirty = true;
+		
 		if (stage.updatePending()) {
 			updateActive = true;
 			stage.update_sys();
 			updateActive = false;
 		}
+		
 		if (stage.redrawPending()) {
-			preDraw();
 			stage.draw_sys(this.g);
 		}
 	}
 	
-	/**
-	 * This method is called right before the scene-graph is redrawn. You can override it to perform
-	 * specific actions.
+	// *********************************************************************************************
+	// Mouse functionality:
+	// ---------------------------------------------------------------------------------------------
+	
+	/* True when the stageMouseVector is no longer valid. */
+	private boolean stageMouseVectorDirty = true;
+	
+	/*
+	 * The mouse position as given by the PApplet, currently relative to the top-left corner of the
+	 * PApplet panel.
 	 */
-	protected void preDraw() {}
+	private PVector mouseVector = new PVector(0, 0);
 	
-	// ---------------------------------------------------------------------------------------------
-	// Mouse event handlers:
-	// ---------------------------------------------------------------------------------------------
+	/*
+	 * The mouse position in the stage.
+	 */
+	private PVector stageMouseVector = new PVector(0, 0);
 	
-	@Override
-	public void mouseClicked(MouseEvent e) {
-		super.mouseClicked(e);
-		if (stage.wantsSysMouseEvents) stage.mouseClicked_sys();
+	/*
+	 * The base transformation matrix that applies to the stage. The mouseVector should by be
+	 * multiplied by this matrix to obtain the stageMouseVector.
+	 */
+	private PMatrix stageMouseMatrix;
+	
+	/**
+	 * @return The mouse position in the stage.
+	 */
+	public PVector getMouseVector() {
+		boolean trace = false;
+		if (trace) {
+			System.out.println(">> SGApp.getMouseVector() - stageMouseVectorDirty: "
+					+ stageMouseVectorDirty);
+		}
+		if (stageMouseVectorDirty) {
+			if (trace) {
+				System.out.println(" - stageMouseMatrix:");
+				printMatrix(stageMouseMatrix);
+			}
+			mouseVector.set(mouseX, mouseY);
+			stageMouseMatrix.mult(mouseVector, stageMouseVector);
+			if (trace) {
+				System.out.println(" - mouseVector: " + mouseVector.x + ", " + mouseVector.y);
+				System.out.println(" - stageMouseVector: " + stageMouseVector.x + ", "
+						+ stageMouseVector.y);
+			}
+			stageMouseVectorDirty = false;
+		}
+		return stageMouseVector;
 	}
 	
-	@Override
-	public void mousePressed(MouseEvent e) {
-		super.mousePressed(e);
-		if (stage.wantsSysMouseEvents) stage.mousePressed_sys();
+	/**
+	 * Class for internal system mouse events.
+	 */
+	public class MouseSystemEvent {
+		
+		private SGApp app;
+		
+		public MouseEvent processingEvent;
+		
+		public boolean consumed = false;
+		
+		public MouseSystemEvent(SGApp app) {
+			this.app = app;
+		}
+		
+		public MouseSystemEvent reset(MouseEvent processingEvent) {
+			this.processingEvent = processingEvent;
+			consumed = false;
+			return this;
+		}
 	}
 	
-	@Override
-	public void mouseReleased(MouseEvent e) {
-		super.mouseReleased(e);
-		if (stage.wantsSysMouseEvents) stage.mouseReleased_sys();
-	}
-	
-	@Override
-	public void mouseMoved(MouseEvent e) {
-		super.mouseMoved(e);
-		if (stage.wantsSysMouseEvents) stage.mouseMoved_sys();
-	}
-	
-	@Override
-	public void mouseDragged(MouseEvent e) {
-		super.mouseDragged(e);
-		if (stage.wantsSysMouseEvents) stage.mouseDragged_sys();
-	}
+	/* The mouseSysEvent singleton. */
+	private MouseSystemEvent mouseSysEvent = new MouseSystemEvent(this);
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// TODO
 	
-	// @Override
-	// public void mouseEntered(MouseEvent e) {
-	// super.mouseEntered(e);
-	// }
-	
-	// @Override
-	// public void mouseExited(MouseEvent e) {
-	// super.mouseExited(e);
-	// }
-	
-	// @Override
-	// public void mouseWheelMoved(MouseWheelEvent e) {
-	// super.mouseWheelMoved(e);
-	// }
-	
-	@Override
-	public void mouseWheel(processing.event.MouseEvent event) {
-		super.mouseWheel(event);
-		// if (_stage.mouseEventsEnabled) {
-		// _stage.mouseWheel_sys();
-		// }
+	/**
+	 * Handler of Processing mouse events.
+	 * 
+	 * @param event
+	 */
+	public void mouseEvent(MouseEvent processingEvent) {
+		int x = processingEvent.getX();
+		int y = processingEvent.getY();
+		int action = processingEvent.getAction();
+		
+		if (!stage.wantsSysMouseEvents) return;
+		
+		if ((x != mouseVector.x) || (y != mouseVector.y)) stageMouseVectorDirty = true;
+		
+		mouseSysEvent.reset(processingEvent);
+		
+		switch (action) {
+			case MouseEvent.ENTER:
+				// TODO: dispatch enter event
+				break;
+			case MouseEvent.EXIT:
+				if (SGNode.currentOverNode != null && SGNode.currentOverNode.wantsSysMouseEvents)
+					SGNode.currentOverNode.dispatchMouseOut();
+				// TODO: dispatch exit event
+				break;
+			case MouseEvent.PRESS:
+				stage.mousePressed_sys(mouseSysEvent);
+				break;
+			case MouseEvent.RELEASE:
+				stage.mouseReleased_sys(mouseSysEvent);
+				break;
+			case MouseEvent.CLICK:
+				stage.mouseClicked_sys(mouseSysEvent);
+				break;
+			case MouseEvent.MOVE:
+				stage.mouseMoved_sys(mouseSysEvent, false);
+				break;
+			case MouseEvent.DRAG:
+				stage.mouseMoved_sys(mouseSysEvent, true);
+				break;
+		}
 	}
 	
+	// *********************************************************************************************
+	// Keyboard functionality:
 	// ---------------------------------------------------------------------------------------------
 	// Key event handlers:
-	// ---------------------------------------------------------------------------------------------
 	
 	@Override
 	public void keyTyped(KeyEvent e) {
@@ -229,9 +303,9 @@ public class SGApp extends PApplet {
 	 * @param y The z-position to use for the child-node.
 	 * @throws RuntimeException when the given child is already in the scene-graph
 	 */
-	public SGNode addNode(SGNode child, float x, float y, float z) {
-		return stage.addNode(child, x, y, z);
-	}
+	// public SGNode addNode(SGNode child, float x, float y, float z) {
+	// return stage.addNode(child, x, y, z);
+	// }
 	
 	// ---------------------------------------------------------------------------------------------
 	
@@ -280,12 +354,51 @@ public class SGApp extends PApplet {
 	/**
 	 * @return True if the renderer of the given PGraphics object is JAVA2D.
 	 */
-	public boolean isJAVA2D(PGraphics g) {
-		return g.getClass().getName().equals(PConstants.JAVA2D);
+	public boolean isJAVA2D(PGraphics pg) {
+		return pg.getClass().getName().equals(PConstants.JAVA2D);
 	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	/**
+	 * @return True if the renderer of this PApplet is P2D.
+	 */
+	public boolean isP2D() {
+		return g.getClass().getName().equals(PConstants.P2D);
+	}
+	
+	/**
+	 * @return True if the renderer of the given PGraphics object is P2D.
+	 */
+	public boolean isP2D(PGraphics pg) {
+		return pg.getClass().getName().equals(PConstants.P2D);
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	/**
+	 * @return True if the renderer of this PApplet is P3D.
+	 */
+	public boolean isP3D() {
+		return g.getClass().getName().equals(PConstants.P3D);
+	}
+	
+	/**
+	 * @return True if the renderer of the given PGraphics object is P3D.
+	 */
+	public boolean isP3D(PGraphics pg) {
+		return pg.getClass().getName().equals(PConstants.P3D);
+	}
+	
+	// ---------------------------------------------------------------------------------------------
 	
 	public String getClassName() {
 		return getClass().getSimpleName() + "(SGApp)";
+	}
+	
+	protected void printMatrix(PMatrix matrix) {
+		if (matrix.getClass() == PMatrix2D.class) ((PMatrix2D) matrix).print();
+		else if (matrix.getClass() == PMatrix3D.class) ((PMatrix3D) matrix).print();
 	}
 	
 }

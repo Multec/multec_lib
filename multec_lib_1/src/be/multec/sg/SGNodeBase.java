@@ -1,5 +1,6 @@
 package be.multec.sg;
 
+import java.awt.Rectangle;
 import java.io.File;
 
 import processing.core.PApplet;
@@ -70,8 +71,15 @@ public class SGNodeBase {
 	 * 
 	 * @return True when a file exists on the given path.
 	 */
-	protected boolean fileExists(String path) {
+	public boolean fileExists(String path) {
 		return new File(path).exists();
+	}
+	
+	/**
+	 * Returns a string that represents the data from the given rectangle.
+	 */
+	public String rectStr(Rectangle r) {
+		return "x: " + r.x + ", y: " + r.y + ", w: " + r.width + ", h: " + r.height;
 	}
 	
 	// *********************************************************************************************

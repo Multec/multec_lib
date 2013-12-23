@@ -1,14 +1,16 @@
 package basics;
 
 import java.awt.Color;
-import java.awt.Rectangle;
 
-import processing.core.PApplet;
-import processing.core.PConstants;
-import processing.core.PGraphics;
 import processing.core.PShape;
+import processing.core.PVector;
+import be.multec.sg.SGApp;
+import be.multec.sg.SGMouseEventHandler;
+import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
+import be.multec.sg.d2.SGRect;
 import be.multec.sg.d2.SGShape;
+import be.multec.sg.d2.SGShape.Position;
 
 /**
  * @author Wouter Van den Broeck
@@ -21,7 +23,7 @@ public class ShapeDemo extends SGWindow {
 	
 	public static void main(String[] args) {
 		ShapeDemo app = new ShapeDemo();
-		app.setRenderer(PConstants.P2D);
+		// app.setRenderer(PConstants.P2D);
 		app.open("Shape Demo", 50, 30, 900, 900, new Color(0xFFFFFF));
 	}
 	
@@ -36,174 +38,195 @@ public class ShapeDemo extends SGWindow {
 		// smooth();
 		
 		PShape svg = loadShape("Multec_logo_RGB.svg");
+		// svg.noStroke();
 		SGShape node;
 		
 		// SVG: basic use case
-		node = new SGShape(this, svg, new Rectangle(-219, 445, 161, 53), new Rectangle(0, 0, 162, 54));
-		addNode(node, 25, 25);
+		node = new LogoShape(this, svg);
+		addNode(node, 20, 20);
 		
-		// SVG: non-proportional resizing
-		node = new SGShape(this, svg, new Rectangle(-219, 445, 161, 53), new Rectangle(0, 0, 100, 52));
-		addNode(node, 25, 100);
+		node = new LogoShape(this, svg);
+		node.scale(2);
+		node.rotate(-HALF_PI);
+		addNode(node, 20, 450);
 		
-		// SVG: proportional resizing - provide 0 for the unknown dimension
-		node = new SGShape(this, svg, new Rectangle(-219, 445, 161, 53), new Rectangle(0, 0, 100, 0));
-		addNode(node, 25, 175);
+		addNode(new SGRect(this, 90, 90, new Color(0xFFCC00)), 260, 20);
+		node = new MouseShape1(this, "test_1_blue.svg");
+		addNode(node, 260, 20);
 		
-		// SVG: proportional resizing - provide 0 for the unknown dimension
-		node = new SGShape(this, svg, new Rectangle(-219, 445, 161, 53), new Rectangle(0, 0, 0, 30));
-		addNode(node, 25, 225);
+		addNode(new SGRect(this, 90, 90, new Color(0xFFCC00)), 370, 20);
+		node = new MouseShape1(this, "test_1_blue.svg", SGShape.Position.CENTER);
+		addNode(node, 415, 65);
 		
-		// SVG: load test SVG with content that extends out of the viewBox.
-		node = new SGShape(this, "test_1_blue.svg", new Rectangle(-10, -10, 90, 90), new Rectangle(
-				0, 0, 200, 200));
-		addNode(node, 200, 25);
+		addNode(new SGRect(this, 90, 90, new Color(0xFFCC00)), 480, 20);
+		node = new MouseShape1(this, "test_1_blue.svg", SGShape.Position.SOURCE);
+		addNode(node, 480, 20);
 		
-		// SVG: load test SVG with a viewBox centered around the origin.
-		node = new SGShape(this, "test_1_green.svg", new Rectangle(-50, -50, 100, 100), new Rectangle(0,
-				0, 200, 200));
-		addNode(node, 200, 250);
+		addNode(new SGRect(this, 100, 100, new Color(0xFFCC00)), 250, 130);
+		node = new MouseShape1(this, "test_1_green.svg");
+		addNode(node, 250, 130);
 		
-		// SVG: load test SVG with a viewBox centered around the origin.
-		node = new SGShape(this, "test_1_red.svg", new Rectangle(50, 0, 100, 100), new Rectangle(0,
-				0, 200, 200));
-		addNode(node, 200, 475);
+		addNode(new SGRect(this, 100, 100, new Color(0xFFCC00)), 360, 130);
+		node = new MouseShape1(this, "test_1_green.svg", Position.CENTER);
+		addNode(node, 410, 180);
 		
-		if (!node.isJAVA2D(this.g)) addCreatedShapes();
+		addNode(new SGRect(this, 100, 100, new Color(0xFFCC00)), 470, 130);
+		node = new MouseShape1(this, "test_1_green.svg", Position.SOURCE);
+		addNode(node, 520, 180);
+		
+		addNode(new SGRect(this, 200, 200, new Color(0xFFCC00)), 590, 20);
+		node = new MouseShape1(this, "test_1_blue.svg", SGShape.Position.CENTER);
+		node.scale(2);
+		addNode(node, 690, 120);
+		
+		addCreatedShapes();
 	}
+	
+	// *********************************************************************************************
+	// addCreatedShapes:
+	// ---------------------------------------------------------------------------------------------
 	
 	private void addCreatedShapes() {
-		SGShape node;
+		BtnShape btn;
+		PShape pShape;
 		
-		// Custom shape: constructing a special shape by overriding createShape
-		node = new SGShape(this) {
-			
-			/* @see be.multec.sg.d2.SGShape#createShape() */
-			@Override
-			protected PShape createShape() {
-				return app.createShape(TRIANGLE, 10, 10, 100, 100, 10, 50);
-			}
-			
-		};
-		addNode(node, 425, 25);
+		addNode(new SGRect(this, 200, 200, new Color(0xFFCC00)), 250, 250);
 		
-		// not operational in P2D
-		// addNode(new SGShape(this, svg), 25, 25);
-		// addNode(new SGShape(this, svg, 400, 25), 25, 125);
-		// addNode(new SGShape(this, svg, 400, 0), 25, 170);
+		pShape = createShape(TRIANGLE, 100, 0, 100, 100, 0, 100);
+		btn = new BtnShape(this, pShape);
+		addNode(btn, 250, 250);
 		
-		// operational in P2D
-		// sn = new SGShape(this, svg, 250, 0);
-		// sn.disableStyle();
-		// sn.fill(Color.BLACK);
-		// addNode(sn, 200, 25);
+		pShape = createShape(TRIANGLE, 0, 0, 100, 100, 0, 100);
+		btn = new BtnShape(this, pShape);
+		addNode(btn, 350, 250);
 		
-		// not operational in JAVA2D (default renderer)
-		node = new SGShape(this) {
-			
-			/* @see be.multec.sg.d2.SGShape#draw(processing.core.PGraphics) */
-			@Override
-			protected void draw(PGraphics g) {
-				super.draw(g);
-				
-				// g.beginShape();
-				// g.fill(0xBE0000);
-				// g.vertex(20, 20);
-				// g.vertex(80, 20);
-				// g.vertex(20, 80);
-				// //g.bezierVertex(80, 80, 80, 80, 20, 80);
-				// g.endShape(CLOSE);
-				
-				// fill(new Color(0xBE0000));
-				// beginShape();
-				// vertex(20, 20);
-				// vertex(80, 20);
-				// vertex(20, 80);
-				// //g.bezierVertex(80, 80, 80, 80, 20, 80);
-				// endShape(CLOSE);
-				
-			}
-			
-		};
-		// addNode(sn, 450, 25);
+		pShape = createShape(TRIANGLE, 0, 0, 100, 0, 100, 100);
+		btn = new BtnShape(this, pShape);
+		addNode(btn, 250, 350);
 		
-		// addNode(new RectShape(this), 550, 75);
-		// addNode(new TShape(this), 650, 25);
+		pShape = createShape(TRIANGLE, 0, 0, 100, 0, 0, 100);
+		btn = new BtnShape(this, pShape);
+		addNode(btn, 350, 350);
+		
+		pShape = createShape(QUAD, 50, 0, 100, 50, 50, 100, 0, 50);
+		btn = new BtnShape(this, pShape);
+		btn.outColor = new Color(0);
+		btn.fill(btn.outColor);
+		addNode(btn, 300, 300);
 	}
 	
-	class RectShape extends SGShape {
+	// *********************************************************************************************
+	// MouseShape:
+	// ---------------------------------------------------------------------------------------------
+	
+	private class MouseShape1 extends SGShape {
 		
-		/**
-		 * @param app
-		 */
-		public RectShape(PApplet app) {
-			super(app);
-			
-			// shape = app.createShape(RECT, 0, 0, 100, 100);
-			// System.out.println("- shape: " + shape);
-			// fill(new Color(0xBE0000));
-			//
-			// targetWidth = shape.getWidth();
-			// targetHeight = shape.getHeight();
-			
-			// shape.beginShape();
-			// shape.vertex(20, 20);
-			// shape.vertex(80, 20);
-			// shape.vertex(20, 80);
-			// shape.endShape();
+		public MouseShape1(SGApp app, PShape shape) {
+			super(app, shape);
+			init();
 		}
 		
-		// @Override
-		// protected void draw(PGraphics g) {
-		// if (shape == null) {
-		// System.err.println("The shape is not available in SGShape.draw.");
-		// return;
-		// }
-		// System.out.println("- shape: " + shape);
-		// System.out.println("- shape width/height: " + shape.getWidth() + " x " +
-		// shape.getHeight());
-		// System.out.println("- targetWidth/Height: " + targetWidth + " x " + targetHeight);
-		//
-		// g.shape(shape, 0, 0, targetWidth, targetHeight);
-		// }
+		public MouseShape1(SGApp app, PShape shape, Position position) {
+			super(app, shape, position);
+			init();
+		}
+		
+		public MouseShape1(SGApp app, String path, Position position) {
+			super(app, path, position);
+			init();
+		}
+		
+		public MouseShape1(SGApp app, String path) {
+			super(app, path);
+			init();
+		}
+		
+		private void init() {
+			addMouseEventHandler(new SGMouseEventHandler() {
+				
+				/* @see be.multec.sg.SGMouseEventHandler#mouseOver(be.multec.sg.SGNode) */
+				@Override
+				protected void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
+					// System.out.println("OVER");
+					SGShape shape = (SGShape) node;
+					shape.fill(new Color(0xBE0000));
+					shape.stroke(new Color(0x9B0000));
+					shape.strokeWeight(20);
+				}
+				
+				/* @see be.multec.sg.SGMouseEventHandler#mouseOut(be.multec.sg.SGNode) */
+				@Override
+				protected void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
+					// System.out.println("OUT");
+					// ((SGFigure) node).fill(new Color(0));
+					((SGShape) node).useShapeStyles();
+				}
+				
+			});
+		}
 		
 	}
 	
-	class TShape extends SGShape {
+	// ---------------------------------------------------------------------------------------------
+	
+	private class LogoShape extends SGShape {
 		
-		/**
-		 * @param app
-		 */
-		public TShape(PApplet app) {
-			super(app);
-			
-			// shape = app.createShape(RECT, 0, 0, 100, 100);
-			// System.out.println("- shape: " + shape);
-			// fill(new Color(0xBE0000));
-			//
-			// targetWidth = shape.getWidth();
-			// targetHeight = shape.getHeight();
-			
-			// shape.beginShape();
-			// shape.vertex(20, 20);
-			// shape.vertex(80, 20);
-			// shape.vertex(20, 80);
-			// shape.endShape();
+		public LogoShape(SGApp app, PShape shape) {
+			super(app, shape);
+			init();
 		}
 		
-		// @Override
-		// protected void draw(PGraphics g) {
-		// if (shape == null) {
-		// System.err.println("The shape is not available in SGShape.draw.");
-		// return;
-		// }
-		// System.out.println("- shape: " + shape);
-		// System.out.println("- shape width/height: " + shape.getWidth() + " x " +
-		// shape.getHeight());
-		// System.out.println("- targetWidth/Height: " + targetWidth + " x " + targetHeight);
-		//
-		// g.shape(shape, 0, 0, targetWidth, targetHeight);
-		// }
+		private void init() {
+			addMouseEventHandler(new SGMouseEventHandler() {
+				
+				/* @see be.multec.sg.SGMouseEventHandler#mouseOver(be.multec.sg.SGNode) */
+				@Override
+				protected void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
+					// System.out.println("OVER");
+					((SGShape) node).fill(new Color(0));
+				}
+				
+				/* @see be.multec.sg.SGMouseEventHandler#mouseOut(be.multec.sg.SGNode) */
+				@Override
+				protected void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
+					// System.out.println("OUT");
+					((SGShape) node).useShapeStyles();
+				}
+				
+			});
+		}
+		
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	private class BtnShape extends SGShape {
+		
+		public Color overColor = new Color(0xBE0000);
+		public Color outColor = new Color(0x554400);
+		
+		public BtnShape(SGApp app, PShape shape) {
+			super(app, shape);
+			useNodeStyles();
+			fill(outColor);
+			addMouseEventHandler(new SGMouseEventHandler() {
+				
+				/* @see be.multec.sg.SGMouseEventHandler#mouseOver(be.multec.sg.SGNode) */
+				@Override
+				protected void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
+					// System.out.println("OVER");
+					((SGShape) node).fill(overColor);
+				}
+				
+				/* @see be.multec.sg.SGMouseEventHandler#mouseOut(be.multec.sg.SGNode) */
+				@Override
+				protected void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
+					// System.out.println("OUT");
+					((SGShape) node).fill(outColor);
+				}
+				
+			});
+		}
 		
 	}
 	

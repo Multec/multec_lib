@@ -19,6 +19,7 @@ public class FullscreenDemo extends SGWindow {
 	
 	public static void main(String[] args) {
 		FullscreenDemo app = new FullscreenDemo();
+		app.setRenderer(P2D);
 		app.openFullscreen(new Color(0xBE0000));
 		// app.open("OpenFullscreen", 50, 50, 1280, 960, 0xBE0000);
 	}

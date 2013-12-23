@@ -3,8 +3,8 @@ package be.multec.sg.d2;
 import java.awt.Color;
 import java.awt.Rectangle;
 
-import processing.core.PApplet;
 import processing.core.PGraphics;
+import be.multec.sg.SGApp;
 import be.multec.sg.SGFigure;
 
 /**
@@ -43,11 +43,9 @@ public class SGRect extends SGFigure {
 	 * @param width
 	 * @param height
 	 */
-	public SGRect(PApplet app, float width, float height) {
+	public SGRect(SGApp app, float width, float height) {
 		super(app);
 		initRect(width, height);
-		filled = true;
-		stroked = true;
 	}
 	
 	/**
@@ -56,10 +54,9 @@ public class SGRect extends SGFigure {
 	 * @param height
 	 * @param fillColor
 	 */
-	public SGRect(PApplet app, float width, float height, Color fillColor) {
+	public SGRect(SGApp app, float width, float height, Color fillColor) {
 		super(app, fillColor);
 		initRect(width, height);
-		filled = true;
 	}
 	
 	/**
@@ -70,13 +67,11 @@ public class SGRect extends SGFigure {
 	 * @param strokeColor
 	 * @param strokeWeight
 	 */
-	public SGRect(PApplet app, float width, float height, Color fillColor, Color strokeColor,
+	public SGRect(SGApp app, float width, float height, Color fillColor, Color strokeColor,
 			int strokeWeight)
 	{
 		super(app, fillColor, strokeColor, strokeWeight);
 		initRect(width, height);
-		filled = true;
-		stroked = true;
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -108,8 +103,8 @@ public class SGRect extends SGFigure {
 		if (this.rectWidth == width) return;
 		this.rectWidth = width;
 		centerX = width / 2;
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 	}
 	
 	/**
@@ -119,8 +114,8 @@ public class SGRect extends SGFigure {
 		if (this.rectHeight == height) return;
 		this.rectHeight = height;
 		centerY = height / 2;
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 	}
 	
 	/**
@@ -136,8 +131,8 @@ public class SGRect extends SGFigure {
 		this.rectHeight = height;
 		centerX = width / 2;
 		centerY = height / 2;
-		invalidateBounds(true);
-		invalidateContent();
+		invalidateLocalBounds();
+		redraw();
 		return this;
 	}
 	
@@ -179,6 +174,7 @@ public class SGRect extends SGFigure {
 	@Override
 	protected void draw(PGraphics g) {
 		// System.out.println(">> SGRect[" + this + "].draw()");
+		g.rectMode(CORNER);
 		g.rect(0, 0, rectWidth, rectHeight);
 	}
 	
@@ -186,13 +182,8 @@ public class SGRect extends SGFigure {
 	
 	/* @see be.multec.sg.SGNode#mouseHitTest() */
 	@Override
-	protected boolean mouseHitTest() {
-		float tx = getMouseX();
-		if (tx >= 0 && tx < rectWidth) {
-			float ty = getMouseY();
-			return ty >= 0 && ty < rectHeight;
-		}
-		return false;
+	protected boolean contains(float x, float y) {
+		return x >= 0 && x < rectWidth && y >= 0 && y < rectHeight;
 	}
 	
 	// *********************************************************************************************
@@ -202,10 +193,10 @@ public class SGRect extends SGFigure {
 	/* @see be.multec.sg.SGNode#updateLocalBounds(java.awt.Rectangle) */
 	@Override
 	protected void updateLocalBounds(Rectangle bounds) {
-		if (stroked) {
-			bounds.x = bounds.y = (int) Math.floor(-strokeWeight / 2);
-			bounds.width = (int) Math.ceil(rectWidth + strokeWeight);
-			bounds.height = (int) Math.ceil(rectHeight + strokeWeight);
+		if (stroked()) {
+			bounds.x = bounds.y = (int) Math.floor(-strokeWeight() / 2);
+			bounds.width = (int) Math.ceil(rectWidth + strokeWeight());
+			bounds.height = (int) Math.ceil(rectHeight + strokeWeight());
 		}
 		else {
 			bounds.x = bounds.y = 0;

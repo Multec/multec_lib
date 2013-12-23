@@ -1,6 +1,6 @@
 package be.multec.sg;
 
-import processing.core.PApplet;
+import java.awt.Rectangle;
 
 /**
  * @author Wouter Van den Broeck
@@ -18,7 +18,7 @@ public class SGStage extends SGNode {
 	/**
 	 * @param app
 	 */
-	public SGStage(PApplet app) {
+	public SGStage(SGApp app) {
 		super(app);
 		this.name = "stage for " + app.getClass().getSimpleName();
 		isStage = true;
@@ -26,7 +26,7 @@ public class SGStage extends SGNode {
 	}
 	
 	// *********************************************************************************************
-	// Methods:
+	// SGApp Methods:
 	// ---------------------------------------------------------------------------------------------
 	
 	/* @see be.multec.sg.SGNode#setCached(boolean) */
@@ -38,6 +38,14 @@ public class SGStage extends SGNode {
 	public void cache() {
 		throw new Error("Do not use the cache on the stage.");
 	}
+	
+	/* @see be.multec.sg.SGNode#updateLocalBounds(java.awt.Rectangle) */
+	@Override
+	protected void updateLocalBounds(Rectangle localBounds) { /* no content */}
+	
+	// *********************************************************************************************
+	// Processing Methods:
+	// ---------------------------------------------------------------------------------------------
 	
 	// *********************************************************************************************
 	// Accessors:

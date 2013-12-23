@@ -1,6 +1,7 @@
 package basics;
 
 import java.awt.Color;
+import java.awt.Rectangle;
 
 import processing.core.PGraphics;
 import be.multec.sg.SGApp;
@@ -26,6 +27,7 @@ public class LabelDemo extends SGWindow {
 	
 	public static void main(String[] args) {
 		LabelDemo app = new LabelDemo();
+		// app.setRenderer(PConstants.P2D);
 		app.open("LabelDemo", 50, 30, 750, 750, new Color(0xFFCC00));
 	}
 	
@@ -45,6 +47,12 @@ public class LabelDemo extends SGWindow {
 			g.stroke(0x66AA0000);
 			g.line(0, -9, 0, 10);
 			g.line(-9, 0, 10, 0);
+		}
+		
+		/* @see be.multec.sg.SGNode#updateLocalBounds(java.awt.Rectangle) */
+		@Override
+		protected void updateLocalBounds(Rectangle localBounds) {
+			localBounds.setBounds(-9, -9, 20, 20);
 		}
 		
 	}
@@ -75,11 +83,11 @@ public class LabelDemo extends SGWindow {
 		paddingStyles.setFont(loadFont("TheSans-Light-36.vlw"));
 		paddingStyles.setBackgroundColor(bgColor);
 		paddingStyles.setPadding(5);
-
+		
 		ILabelStyles headerStyles = new SGLabelStyles();
 		headerStyles.setTextSize(22);
 		largerStyles.setFont(loadFont("TheSans-Light-36.vlw"));
-
+		
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		
 		addNode(new SGLabel(this, "Label mode: SIMPLE - no padding", headerStyles), 20, 30);

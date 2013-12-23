@@ -2,6 +2,8 @@ package basics;
 
 import java.awt.Color;
 
+import processing.core.PConstants;
+
 import be.multec.sg.SGWindow;
 import be.multec.sg.d2.SGImage;
 import be.multec.sg.d2.SGImage.SGImageMode;
@@ -17,7 +19,9 @@ public class ImageDemo extends SGWindow {
 	// ---------------------------------------------------------------------------------------------
 	
 	public static void main(String[] args) {
-		new ImageDemo().open("ImageDemo", 50, 30, 1050, 408, new Color(0xffcc00));
+		ImageDemo app = new ImageDemo();
+		app.setRenderer(PConstants.P2D);
+		app.open("ImageDemo", 50, 30, 1050, 408, new Color(0xffcc00));
 	}
 	
 	// *********************************************************************************************

@@ -1,17 +1,19 @@
 package be.multec.sg;
 
 import java.awt.Rectangle;
-import java.awt.geom.Point2D;
 import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import be.multec.sg.modifiers.IModifier;
-
 import processing.core.PApplet;
 import processing.core.PConstants;
 import processing.core.PGraphics;
+import processing.core.PMatrix;
 import processing.core.PMatrix2D;
+import processing.core.PMatrix3D;
+import processing.core.PVector;
+import be.multec.sg.SGApp.MouseSystemEvent;
+import be.multec.sg.modifiers.IModifier;
 
 /**
  * Base class for nodes in a scene-graph. Each node can act as a container of child-nodes.
@@ -41,7 +43,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * The scene-graph application this nodes is associated with, in particular the SGApp instance
 	 * passed in the constructor.
 	 */
-	protected PApplet app;
+	protected SGApp app;
 	
 	// ---------------------------------------------------------------------------------------------
 	
@@ -63,16 +65,18 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/* True when this node represents 3D content. */
 	protected boolean is3D = false;
 	
+	// ---------------------------------------------------------------------------------------------
+	
 	// *********************************************************************************************
 	// Constructors:
 	// ---------------------------------------------------------------------------------------------
-
+	
 	/**
 	 * Basic constructor.
 	 * 
 	 * @param app The scene-graph application object.
 	 */
-	public SGNode(PApplet app) {
+	public SGNode(SGApp app) {
 		super(app);
 		nodeCounter++;
 		this.app = app;
@@ -118,9 +122,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 		applyTranslate = applyRotate = applyRotateX = applyRotateY = applyRotateZ = false;
 		applyScale = applyTransformation = false;
 		
-		bounds = localBounds = transfBounds = null;
-		boundsDirty = localBoundsDirty = transfBoundsDirty = maintainBounds = false;
-		maintainBoundsCnt = 0;
+		localBounds = null;
+		localBoundsChanged = compositeBoundsChanged = false;
 		
 		updatePending = redrawPending = false;
 		
@@ -128,14 +131,13 @@ public class SGNode extends SGNodeBase implements PConstants {
 		cached = cacheContentDirty = cacheSizeDirty = false;
 		
 		inverseTMatrix = null;
-		inverseTMatrixDirty = maintainInverseTMatrix = false;
+		inverseTMatrixDirty = false;
 		localTMatrix = null;
 		localTMatrixDirty = false;
 		
-		mouseEventsEnabled = mouseHandlerAdded = dispatchMouseEvents = false;
-		forwardSysMouseEvents = wantsSysMouseEvents = false;
+		dispatchMouseEvents = forwardSysMouseEvents = wantsSysMouseEvents = false;
 		mouseHandlers.clear();
-		mouseIsOver = mouseWasPressed = mouseXDirty = mouseYDirty = false;
+		mouseWasPressed = false;
 		
 		disposed = true;
 		
@@ -212,9 +214,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	public void setVisible(boolean visible) {
 		if (this.visible == visible) return;
 		this.visible = visible;
-		invalidateContent();
-		if (visible) invalidateBounds(false);
-		if (parent != null) parent.invalidateBounds(false);
+		redraw();
+		invalidateCompositeBounds();
 	}
 	
 	/** Set the visibility of this node to true. */
@@ -319,9 +320,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (this.x == x) return;
 		this.x = x;
 		updateApplyTranslate();
-		invalidateTMatrix();
-		invalidateContent();
-		invalidateBounds(true);
+		invalidateTransformation();
+		invalidateCompositeBounds();
 	}
 	
 	/**
@@ -340,32 +340,31 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (this.y == y) return;
 		this.y = y;
 		updateApplyTranslate();
-		invalidateTMatrix();
-		invalidateContent();
-		invalidateBounds(true);
+		invalidateTransformation();
+		invalidateCompositeBounds();
 	}
 	
 	/**
 	 * Get the z-position of the origin of this node. Only available in a 3D-scene-graph.
 	 */
-	public float getZ() {
-		if (!app.g.is3D()) throw new Error("SGNode.getZ() should be used in a 3D context.");
-		return z;
-	}
+	// public float getZ() {
+	// if (!app.g.is3D()) throw new Error("SGNode.getZ() should be used in a 3D context.");
+	// return z;
+	// }
 	
 	/**
 	 * Set the z-position of the origin of this node. Only available in a 3D-scene-graph.
 	 * 
 	 * @param z the z to set
 	 */
-	public void setZ(float z) {
-		if (this.z == z) return;
-		if (!app.g.is3D()) throw new Error("SGNode.setZ(float) should be used in a 3D context.");
-		this.z = z;
-		updateApplyTranslate();
-		// invalidateTransformationMatrix(); // TODO: for now not enabled in 3D
-		invalidateContent();
-	}
+	// public void setZ(float z) {
+	// if (this.z == z) return;
+	// if (!app.g.is3D()) throw new Error("SGNode.setZ(float) should be used in a 3D context.");
+	// this.z = z;
+	// updateApplyTranslate();
+	// // invalidateTransformationMatrix(); // TODO: for now not enabled in 3D
+	// invalidateContent();
+	// }
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
@@ -381,34 +380,33 @@ public class SGNode extends SGNodeBase implements PConstants {
 		this.x = x;
 		this.y = y;
 		updateApplyTranslate();
-		invalidateTMatrix();
-		invalidateContent();
-		invalidateBounds(true);
+		invalidateTransformation();
+		invalidateCompositeBounds();
 		return this;
 	}
 	
-	/**
-	 * Sets the 3D-position of this object to the given coordinate. Only available in a
-	 * 3D-scene-graph.
-	 * 
-	 * @param x
-	 * @param y
-	 * @param z
-	 * @return This object.
-	 */
-	public SGNode moveTo(float x, float y, float z) {
-		if (this.x == x && this.y == y && this.z == z) return this;
-		if (!app.g.is3D())
-			throw new Error("SGNode.moveTo(float, float, float) should be used in a 3D context.");
-		this.x = x;
-		this.y = y;
-		this.z = z;
-		updateApplyTranslate();
-		// invalidateTransformationMatrix(); // for now not enabled in 3D
-		invalidateContent();
-		invalidateBounds(true);
-		return this;
-	}
+	// /**
+	// * Sets the 3D-position of this object to the given coordinate. Only available in a
+	// * 3D-scene-graph.
+	// *
+	// * @param x
+	// * @param y
+	// * @param z
+	// * @return This object.
+	// */
+	// public SGNode moveTo(float x, float y, float z) {
+	// if (this.x == x && this.y == y && this.z == z) return this;
+	// if (!app.g.is3D())
+	// throw new Error("SGNode.moveTo(float, float, float) should be used in a 3D context.");
+	// this.x = x;
+	// this.y = y;
+	// this.z = z;
+	// updateApplyTranslate();
+	// // invalidateTransformationMatrix(); // for now not enabled in 3D
+	// invalidateContent();
+	// invalidateCompositeBounds();
+	// return this;
+	// }
 	
 	/**
 	 * Updates the position of this object by adding the given coordinate-vector to the current
@@ -424,33 +422,32 @@ public class SGNode extends SGNodeBase implements PConstants {
 		this.x += x;
 		this.y += y;
 		updateApplyTranslate();
-		invalidateTMatrix();
-		invalidateContent();
-		invalidateBounds(true);
+		invalidateTransformation();
+		invalidateCompositeBounds();
 		return this;
 	}
 	
-	/**
-	 * Updates the position of this object by adding the given coordinate-vector to the current
-	 * position. Only available in a 3D-scene-graph.
-	 * 
-	 * @param x
-	 * @param y
-	 * @param z
-	 * @return This object.
-	 */
-	public SGNode move(float x, float y, float z) {
-		if (x == 0 && y == 0 && z == 0) return this;
-		if (!app.g.is3D())
-			throw new Error("SGNode.move(float, float, float) should be used in a 3D context.");
-		this.x += x;
-		this.y += y;
-		this.z += z;
-		updateApplyTranslate();
-		// invalidateTransformationMatrix(); // TODO: for now not enabled in 3D
-		invalidateContent();
-		return this;
-	}
+	// /**
+	// * Updates the position of this object by adding the given coordinate-vector to the current
+	// * position. Only available in a 3D-scene-graph.
+	// *
+	// * @param x
+	// * @param y
+	// * @param z
+	// * @return This object.
+	// */
+	// public SGNode move(float x, float y, float z) {
+	// if (x == 0 && y == 0 && z == 0) return this;
+	// if (!app.g.is3D())
+	// throw new Error("SGNode.move(float, float, float) should be used in a 3D context.");
+	// this.x += x;
+	// this.y += y;
+	// this.z += z;
+	// updateApplyTranslate();
+	// // invalidateTransformationMatrix(); // TODO: for now not enabled in 3D
+	// invalidateContent();
+	// return this;
+	// }
 	
 	// *********************************************************************************************
 	// Rotation in 2D-scene-graphs:
@@ -484,9 +481,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (this.rotation == angle) return;
 		this.rotation = angle;
 		updateApplyRotate2D();
-		invalidateTMatrix();
-		invalidateContent();
-		invalidateBounds(true);
+		invalidateTransformation();
+		invalidateCompositeBounds();
 		
 	}
 	
@@ -500,9 +496,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (angle == 0) return;
 		this.rotation += angle;
 		updateApplyRotate2D();
-		invalidateTMatrix();
-		invalidateContent();
-		invalidateBounds(true);
+		invalidateTransformation();
+		invalidateCompositeBounds();
 	}
 	
 	// *********************************************************************************************
@@ -553,7 +548,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		this.rotationX = rotation;
 		updateApplyRotate3D();
 		// invalidateTransformationMatrix(); // for now not enabled in 3D
-		invalidateContent();
+		redraw();
 	}
 	
 	/**
@@ -590,7 +585,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		this.rotationY = rotation;
 		updateApplyRotate3D();
 		// invalidateTransformationMatrix(); // for now not enabled in 3D
-		invalidateContent();
+		redraw();
 	}
 	
 	/**
@@ -627,7 +622,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		this.rotationZ = rotation;
 		updateApplyRotate3D();
 		// invalidateTransformationMatrix(); // for now not enabled in 3D
-		invalidateContent();
+		redraw();
 	}
 	
 	/**
@@ -668,9 +663,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 		this.scale = scale;
 		applyScale = scale != 0;
 		applyTransformation = applyTranslate || applyRotate || applyScale;
-		invalidateTMatrix();
-		invalidateContent();
-		invalidateBounds(true);
+		invalidateTransformation();
+		invalidateCompositeBounds();
 	}
 	
 	// *********************************************************************************************
@@ -714,24 +708,24 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/**
 	 * True when this node contains one or more child-nodes. Do not directly modify this property.
 	 */
-	protected boolean hasChildren = false;
+	private boolean hasChildren = false;
 	
 	/** The list of child nodes in this node. */
-	protected final CopyOnWriteArrayList<SGNode> children = new CopyOnWriteArrayList<SGNode>();
+	private final CopyOnWriteArrayList<SGNode> children = new CopyOnWriteArrayList<SGNode>();
 	
 	/**
 	 * The list of child nodes in this node to which system-mouse-events should be forwarded.
 	 * 
 	 * Note that forwardSysMouseEvents is true when there is one or more nodes in this collection.
 	 */
-	protected final CopyOnWriteArrayList<SGNode> mouseChildren = new CopyOnWriteArrayList<SGNode>();
+	private final CopyOnWriteArrayList<SGNode> mouseChildren = new CopyOnWriteArrayList<SGNode>();
 	
 	/**
 	 * The list of child nodes in this node to which system-key-events should be forwarded.
 	 * 
 	 * Note that forwardSysMouseEvents is true when there is one or more nodes in this collection.
 	 */
-	protected final CopyOnWriteArrayList<SGNode> keyChildren = new CopyOnWriteArrayList<SGNode>();
+	private final CopyOnWriteArrayList<SGNode> keyChildren = new CopyOnWriteArrayList<SGNode>();
 	
 	// ---------------------------------------------------------------------------------------------
 	
@@ -758,6 +752,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public SGNode addNode(SGNode child) {
 		// System.out.println(">> SGNode[" + this.name + "].addChild()");
+		if (child.is3D) throw new Error("3D content is currently not supported.");
+		
 		if (child.addedToSG) {
 			throw new Error("SGNode.addChild(SGNode) was" + " called (on " + this.toString()
 					+ ") with a child that" + " is already part of the scene-graph - container: .");
@@ -767,14 +763,11 @@ public class SGNode extends SGNodeBase implements PConstants {
 			hasChildren = true;
 			child.parent = this;
 			if (addedToSG) child.onAddedToSG();
-			if (child.wantsSysMouseEvents) forwardMouseEventTo(child);
+			if (child.wantsSysMouseEvents) forwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) forwardKeyEventTo(child);
-			if (child.updatePending && !updatePending) invalidateState();
-			invalidateContent(); // always request redraw
-			if (maintainBounds) {
-				child.maintainBounds();
-				invalidateBounds(false);
-			}
+			if (child.updatePending && !updatePending) invalidateUpdate();
+			redraw(); // always request redraw
+			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
 		return child;
 	}
@@ -794,21 +787,21 @@ public class SGNode extends SGNodeBase implements PConstants {
 		return child;
 	}
 	
-	/**
-	 * Adds a child-node in this container.
-	 * 
-	 * @param node The child-node to add in this container.
-	 * @param x The x-position to use for the child-node.
-	 * @param y The y-position to use for the child-node.
-	 * @param y The z-position to use for the child-node.
-	 * @throws RuntimeException when the given child is already in the scene-graph
-	 */
-	public SGNode addNode(SGNode node, float x, float y, float z) {
-		if (!app.g.is3D()) return addNode(node, x, y);
-		addNode(node);
-		node.moveTo(x, y, z);
-		return node;
-	}
+	// /**
+	// * Adds a child-node in this container.
+	// *
+	// * @param node The child-node to add in this container.
+	// * @param x The x-position to use for the child-node.
+	// * @param y The y-position to use for the child-node.
+	// * @param y The z-position to use for the child-node.
+	// * @throws RuntimeException when the given child is already in the scene-graph
+	// */
+	// public SGNode addNode(SGNode node, float x, float y, float z) {
+	// if (!app.g.is3D()) return addNode(node, x, y);
+	// addNode(node);
+	// node.moveTo(x, y, z);
+	// return node;
+	// }
 	
 	// ---------------------------------------------------------------------------------------------
 	
@@ -820,11 +813,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 			child.parent = null;
 			if (child.wantsSysMouseEvents) unforwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) unforwardKeyEventsTo(child);
-			invalidateContent();
-			if (maintainBounds) {
-				child.unmaintainBounds();
-				invalidateBounds(false);
-			}
+			redraw();
+			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
 		else throw new Error("SGNode.removeChild(SGNode) was"
 				+ " called with a child that is not contained by the" + " container ("
@@ -840,11 +830,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 			if (child.wantsSysMouseEvents) unforwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) unforwardKeyEventsTo(child);
 			if (children.size() == 0) hasChildren = false;
-			invalidateContent();
-			if (maintainBounds) {
-				child.unmaintainBounds();
-				invalidateBounds(false);
-			}
+			redraw();
+			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
 		catch (IndexOutOfBoundsException exc) {
 			throw new Error("SGNode.removeChild(int) was"
@@ -858,324 +845,258 @@ public class SGNode extends SGNodeBase implements PConstants {
 		for (SGNode child : children) {
 			if (addedToSG) child.onRemovedFromSG();
 			child.parent = null;
-			if (maintainBounds) child.unmaintainBounds();
 			if (child.wantsSysMouseEvents) unforwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) unforwardKeyEventsTo(child);
 		}
 		children.clear();
-		if (maintainBounds) invalidateBounds(false);
 		hasChildren = false;
-		invalidateContent();
+		redraw();
+		if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 	}
 	
 	// *********************************************************************************************
 	// Bounds:
 	// ---------------------------------------------------------------------------------------------
 	
-	/*
-	 * The bounds are maintained when this property is true.
+	/***
+	 * The bounds serve two functions: 1) accelerating the contains-detection, and 2) the caching of
+	 * the graphical content of a node.
 	 * 
-	 * Do not modify this property. Use the maintainBounds and unmaintainBounds methods.
+	 * There are three types of bounds:
+	 * <dl>
+	 * <dt>The local-bounds:</dt>
+	 * <dd>Concerns only the visual content of this node in the local coordinate system of this
+	 * node.</dd>
+	 * <dt>The local-composite-bounds:</dt>
+	 * <dd>Concerns the local visual content of this node and its children in the local coordinate
+	 * system of this node.</dd>
+	 * <dt>The composite-bounds:</dt>
+	 * <dd>Concerns the visual content of this node and its children in the local coordinate system
+	 * of the parent of this node.</dd>
+	 * </ul>
 	 * 
-	 * @see maintainBounds
+	 * When the local-bounds, then the local-composite-bounds might change as well. And when the
+	 * local-composite-bounds changes, then the composite-bounds might change as well. However, when
+	 * the transitions for a node change, then the composite-bounds change but the local bounds
+	 * remain unchanged. Also, when a child-node was added or removed then the
+	 * local-composite-bounds might change, but the local-bounds remain unchanged. We can thus avoid
+	 * unnecessary but potentially costly updates by treating these three bounds separately.
 	 * 
-	 * @see unmaintainBounds
+	 * The local-bounds are always kept up-to-date. The local-composite-bounds and composite-bounds
+	 * on the other hand, are only calculated on demand, and memoized until they become invalid.
+	 * 
+	 * For both the acceleration of the contains-detection and the caching for a particular node, we
+	 * need the local bounds of that node and the local bounds of its children.
 	 */
-	private boolean maintainBounds = false;
 	
-	/*
-	 * The bounds are maintained when this property larger than 0. For each call of the
-	 * maintainBounds method this value is increased. It is decreased for each call of the
-	 * unmaintainBounds method. This approach is necessary because there might be more than one
-	 * independent reason for maintaining the bounds. When one of the these reasons no longer
-	 * applies, the other might still apply.
-	 * 
-	 * Do not modify this property. Use the maintainBounds and unmaintainBounds methods.
-	 * 
-	 * @see maintainBounds
-	 * 
-	 * @see unmaintainBounds
-	 */
-	private int maintainBoundsCnt = 0;
+	// ---------------------------------------------------------------------------------------------
+	// Local bounds:
+	
+	/* @see SGNode#getLocalBounds() */
+	private Rectangle localBounds = new Rectangle();
+	
+	/* True when the localBounds property is not valid and needs to be updated. */
+	protected boolean localBoundsChanged = true;
 	
 	/**
-	 * Call this method when the bounds for this node need to be maintained.
+	 * @return The bounds of the graphical content of this node (not including its children). The
+	 *         transformations set for this nodes are not applied on these bounds. This value is not
+	 *         valid when the localBoundsChanged property is true.
+	 * 
+	 * @see localBoundsChanged
 	 */
-	public void maintainBounds() {
-		if (maintainBoundsCnt == 0) {
-			maintainBounds = localBoundsDirty = boundsDirty = true;
-			for (SGNode child : children)
-				child.maintainBounds();
-			invalidateState();
-		}
-		maintainBoundsCnt++;
+	final public Rectangle getLocalBounds() {
+		if (localBoundsChanged) validateLocalBounds();
+		return localBounds;
 	}
 	
 	/**
-	 * Call this method when the bounds for this node no longer need to be maintained.
+	 * Immediately validates local bounds. [Experimental]
 	 */
-	public void unmaintainBounds() {
-		if (maintainBoundsCnt == 0) throw new Error("Too many unmaintainBounds calls.");
-		maintainBoundsCnt--;
-		if (maintainBoundsCnt == 0) {
-			maintainBounds = localBoundsDirty = boundsDirty = false;
-			for (SGNode child : children)
-				child.unmaintainBounds();
-		}
+	protected void validateLocalBounds() {
+		// System.out.println(">> SGNode[" + this.name + "].validateLocalBounds()");
+		updateLocalBounds(localBounds);
+		localBoundsChanged = false;
+	}
+	
+	/**
+	 * Implement this method for each node that has graphical content. Set the bounds (x, y, width &
+	 * height) in the given rectangle.
+	 * 
+	 * @param localBounds The rectangle in which to set the local bounds.
+	 */
+	protected void updateLocalBounds(Rectangle localBounds) {
+		if (!hasChildren)
+			System.err.println("The method updateLocalBounds() is not implemented for " + this.name
+					+ ".");
+	}
+	
+	/*
+	 * Sets the localBoundsDirty property to true for this node and request an update. During the
+	 * update-phase of the next update-loop, the local bounds will be updated by the
+	 * updateLocalBounds method, which is called from the updateBounds method.
+	 */
+	final public void invalidateLocalBounds() {
+		if (localBoundsChanged) return;
+		// System.out.println(">> SGNode[" + this.name + "].invalidateLocalBounds()");
+		localBoundsChanged = true;
+		if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
+		if (!updatePending) invalidateUpdate();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	/*
-	 * The bounds of the graphical content of this node and all of its child nodes. The
-	 * transformations that apply to this nodes are not considered in these bounds. This value is
-	 * not valid when the boundsDirty property is true.
-	 * 
-	 * @see boundsDirty
-	 */
-	private Rectangle bounds;
+	/* True when the local composite bounds were changed. */
+	private boolean localCompositeBoundsChanged = true;
 	
-	/*
-	 * True when the bounds property is not valid and needs to be updated.
-	 * 
-	 * @see bounds
-	 */
-	private boolean boundsDirty = false;
+	/* Memoized bounds. */
+	private Rectangle localCompositeBounds;
 	
-	// ---------------------------------------------------------------------------------------------
-	
-	/*
-	 * The bounds of the graphical content of this node without that of its child nodes. The
-	 * transformations that apply to this nodes are not considered in these bounds. This value is
-	 * not valid when the localBoundsDirty property is true.
-	 * 
-	 * @see localBoundsDirty
-	 */
-	private Rectangle localBounds;
-	
-	/*
-	 * True when the localBounds property is not valid and needs to be updated.
-	 * 
-	 * @see localBounds
-	 */
-	private boolean localBoundsDirty = false;
-	
-	// ---------------------------------------------------------------------------------------------
-	
-	/*
-	 * The bounds of this node with the transformations for this node applied to it. This value is
-	 * not valid when the transformedBoundsDirty property is true.
-	 * 
-	 * @see transfBoundsDirty
-	 */
-	private Rectangle transfBounds;
-	
-	/*
-	 * True when the transformedBounds property is not valid and needs to be updated. This is the
-	 * case when either the bounds or the transformations for this node were modified.
-	 * 
-	 * @see transformedBounds
-	 */
-	private boolean transfBoundsDirty = false;
-	
-	// ---------------------------------------------------------------------------------------------
+	/* True when the memoized localCompositeBounds is invalid. */
+	private boolean localCompositeBoundsDirty = true;
 	
 	/**
-	 * @return The bounds of this node with the transformations for this node applied to it. This
-	 *         value is not valid when the transformedBoundsDirty property is true.
+	 * Call this method when the the composite bounds of a child of this node changed.
+	 */
+	final public void invalidateLocalCompositeBounds() {
+		if (localCompositeBoundsChanged) return;
+		localCompositeBoundsChanged = true;
+		localCompositeBoundsDirty = true;
+		if (!compositeBoundsChanged) invalidateCompositeBounds();
+		if (!updatePending) invalidateUpdate();
+	}
+	
+	/**
+	 * This value is not valid when the transformedBoundsDirty property is true.
+	 * 
+	 * @return The bounds of this node and its children. The transformations for this node are *not*
+	 *         applied.
 	 * 
 	 * @see transformedBoundsDirty
 	 */
-	final public Rectangle getBounds() {
-		if (!maintainBounds) { throw new Error(
-				"The bounds for this node are not maintained. Use the maintainBounds() method."); }
-		if (transfBoundsDirty) { throw new Error("The bounds are dirty."); }
-		return transfBounds;
+	final public Rectangle getLocalCompositeBounds() {
+		boolean trace = false;
+		if (trace) System.out.println(">> SGNode[" + name + "].getLocalCompositeBounds()");
+		if (localCompositeBoundsDirty) {
+			if (trace) System.out.println(" - localCompositeBoundsDirty = true");
+			if (localCompositeBounds == null) localCompositeBounds = new Rectangle();
+			if (!visible) {
+				localCompositeBounds.setBounds(0, 0, 0, 0);
+				System.err.println("Avoid calling getLocalCompositeBounds() on invisible nodes.");
+			}
+			else {
+				localCompositeBounds.setBounds(getLocalBounds());
+				if (trace) System.out.println(" - local : " + rectStr(localCompositeBounds));
+				
+				for (SGNode child : children) {
+					if (!child.visible) continue;
+					Rectangle childBounds = child.getCompositeBounds();
+					if (trace) System.out.println(" - adding: " + rectStr(childBounds));
+					addBounds(localCompositeBounds, childBounds);
+				}
+			}
+			localCompositeBoundsDirty = false;
+			if (trace) System.out.println(" < result: " + rectStr(localCompositeBounds));
+		}
+		return localCompositeBounds;
 	}
 	
-	/**
-	 * @return The width of the (transformed) graphics content of this this node and its child
-	 *         nodes.
+	/*
+	 * Add the source to the target, avoiding the error that occurs
 	 */
-	final public float getWidth() {
-		if (!maintainBounds) { throw new Error(
-				"The bounds for this node are not maintained. Use the maintainBounds() method."); }
-		if (transfBoundsDirty) { throw new Error("The bounds are dirty."); }
-		return transfBounds.width;
-	}
-	
-	/**
-	 * @return The height of the (transformed) graphicsrt content of this this node and its child
-	 *         nodes.
-	 */
-	final public float getHeight() {
-		if (!maintainBounds) { throw new Error(
-				"The bounds for this node are not maintained. Use the maintainBounds() method."); }
-		if (transfBoundsDirty) { throw new Error("The bounds are dirty."); }
-		return transfBounds.height;
-	}
-	
-	/**
-	 * @return The bounds of the graphical content of this node and all of its child nodes. The
-	 *         transformations that apply to this nodes are not considered in these bounds. This
-	 *         value is not valid when the boundsDirty property is true.
-	 * 
-	 * @see boundsDirty
-	 */
-	final public Rectangle getUntransformedBounds() {
-		if (!maintainBounds) { throw new Error(
-				"The bounds for this node are not maintained. Use the maintainBounds() method."); }
-		if (boundsDirty) { throw new Error("The bounds are dirty."); }
-		return bounds;
+	private void addBounds(Rectangle target, Rectangle source) {
+		if (target.isEmpty()) {
+			target.setBounds(source);
+		}
+		else if (!source.isEmpty()) {
+			target.add(source);
+		}
 	}
 	
 	// ---------------------------------------------------------------------------------------------
+	
+	/*
+	 * True when the compositeBounds property is not valid and needs to be updated. This is the case
+	 * when either the bounds or the transformations for this node were modified.
+	 * 
+	 * @see transformedBounds
+	 */
+	private boolean compositeBoundsChanged = true;
 	
 	/**
 	 * Call this method from the implementation of concrete nodes with graphical content whenever
 	 * this content changed such that the bounds of that content changed as well.
 	 * 
+	 * Note that the composite bound is changed but the local bounds remain untouched, when the
+	 * transformations set on this node are modified.
+	 * 
 	 * @param local Should be true when the local bounds should be invalidated too.
 	 */
-	protected void invalidateBounds(boolean local) {
-		if (!maintainBounds || is3D) return;
-		// System.out.println(">> SGNode[" + name + "].invalidateBounds() - " + boundsDirty
-		// + " - current bounds: " + rectStr(bounds));
-		if (local && !localBoundsDirty) localBoundsDirty = true;
-		if (!boundsDirty) {
-			// Set the boundsDirty property to true for this node and request an update.
-			// During the update-phase of the next update-loop, the bounds will be updated by
-			// calling the updateLocalBounds method, which is called from the updateBounds method.
-			boundsDirty = true;
-			invalidateState();
+	protected void invalidateCompositeBounds() {
+		// if (is3D) throw new Error("3D content is currently not supported.");
+		// System.out.println(">> SGNode[" + name + "].invalidateCompositeBounds()");
+		if (compositeBoundsChanged) return;
+		
+		compositeBoundsChanged = true;
+		compositeBoundsDirty = true;
+		if (parent != null && !parent.localCompositeBoundsChanged) {
+			parent.invalidateLocalCompositeBounds();
 		}
+		
+		if (!updatePending) invalidateUpdate();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
 	
+	/* Memoized bounds. */
+	private Rectangle compositeBounds;
+	
+	/* True when the memoized compositeBounds is invalid. */
+	private boolean compositeBoundsDirty = true;
+	
 	/**
-	 * Implement this method for each node that has graphical content. Set the bounds -x, y, width &
-	 * height- in the given localBounds rectangle.
-	 * 
-	 * @param localBounds The rectangle in which to set the local bounds.
+	 * @return The bounds of this node and its children. The transformations for this node are
+	 *         applied to these bounds.
 	 */
-	protected void updateLocalBounds(Rectangle localBounds) {}
-	
-	/*
-	 * Updates the bounds. This method is called from the during the return-phase of the depth-first
-	 * update-traversal of the node tree. The local bounds will be updated when needed by calling
-	 * the updateLocalBounds method. The boundsDirty property of the parent of this node is set to
-	 * true when the local bounds are found to have been effectively modified. The bounds of the
-	 * parent will, as a consequence, be updated when the update-traversal returns to the parent.
-	 */
-	private void updateBounds() {
+	final public Rectangle getCompositeBounds() {
 		boolean trace = false;
-		if (!maintainBounds) return;
-		if (bounds == null) bounds = new Rectangle();
-		if (trace)
-			System.out.println(">> SGNode[" + name
-					+ "].updateBounds() - current transformedBounds: " + rectStr(bounds));
-		
-		// Handle invisible case:
-		if (!visible) {
-			if (parent != null && !parent.boundsDirty) parent.boundsDirty = true;
-			return;
+		if (trace) System.out.println("* [" + this.name + "].getCompositeBounds()");
+		if (trace) System.out.println(" - compositeBoundsDirty = " + compositeBoundsDirty);
+		if (compositeBoundsDirty) {
+			if (compositeBounds == null) compositeBounds = new Rectangle();
+			if (!visible) {
+				localCompositeBounds.setBounds(0, 0, 0, 0);
+				System.err.println("Avoid calling getCompositeBounds() on invisible nodes.");
+			}
+			else {
+				Rectangle b = compositeBounds;
+				b.setBounds(getLocalCompositeBounds());
+				if (applyRotate || applyScale) {
+					if (trace) System.out.println(" - applyRotate || applyScale");
+					if (localTMatrixDirty) throw new Error("localTMatrix is dirty");
+					float x1 = localTMatrix.multX(b.x, b.y);
+					float y1 = localTMatrix.multY(b.x, b.y);
+					float x2 = localTMatrix.multX(b.x + b.width, b.y);
+					float y2 = localTMatrix.multY(b.x + b.width, b.y);
+					float x3 = localTMatrix.multX(b.x + b.width, b.y + b.height);
+					float y3 = localTMatrix.multY(b.x + b.width, b.y + b.height);
+					float x4 = localTMatrix.multX(b.x, b.y + b.height);
+					float y4 = localTMatrix.multY(b.x, b.y + b.height);
+					b.x = (int) Math.floor(Math.min(Math.min(x1, x2), Math.min(x3, x4)));
+					b.y = (int) Math.floor(Math.min(Math.min(y1, y2), Math.min(y3, y4)));
+					b.width = (int) Math.ceil(Math.max(Math.max(x1, x2), Math.max(x3, x4))) - b.x;
+					b.height = (int) Math.ceil(Math.max(Math.max(y1, y2), Math.max(y3, y4))) - b.y;
+				}
+				else if (applyTranslate) {
+					if (trace) System.out.println(" - applyTranslate only");
+					b.x = (int) Math.floor(b.x + x);
+					b.y = (int) Math.floor(b.y + y);
+				}
+			}
+			compositeBoundsDirty = false;
+			if (trace) System.out.println(" < result: " + rectStr(compositeBounds));
 		}
-		
-		// Update the bounds of the graphical content drawn by this node (ignoring the children):
-		if (localBoundsDirty) {
-			if (localBounds == null) localBounds = new Rectangle();
-			updateLocalBounds(localBounds);
-			localBoundsDirty = false;
-		}
-		
-		// Remember the current bounds to check for effective changes:
-		int px = bounds.x;
-		int py = bounds.y;
-		int pw = bounds.width;
-		int ph = bounds.height;
-		
-		if (localBounds != null) {
-			bounds.x = localBounds.x;
-			bounds.y = localBounds.y;
-			bounds.width = localBounds.width;
-			bounds.height = localBounds.height;
-			if (trace) System.out.println("   local : " + rectStr(localBounds));
-		}
-		else bounds.x = bounds.y = bounds.width = bounds.height = 0;
-		
-		for (SGNode child : children) {
-			if (trace)
-				System.out.println("   adding: " + rectStr(child.transfBounds) + "  ("
-						+ rectStr(child.bounds) + ")");
-			if (child.visible) bounds.add(child.transfBounds);
-		}
-		
-		if (trace) System.out.println("   result: " + rectStr(bounds));
-		
-		// Check if the (untransformed) bounds changed:
-		if (px != bounds.x || py != bounds.y || pw != bounds.width || ph != bounds.height) {
-			if (cached) cacheSizeDirty = true;
-			if (parent != null && !parent.boundsDirty) parent.boundsDirty = true;
-			transfBoundsDirty = true;
-		}
-		
-		if (transfBoundsDirty) updateTransformedBounds();
-		
-		boundsDirty = false;
-	}
-	
-	/* Updates the transformed bounds. */
-	private void updateTransformedBounds() {
-		boolean trace = false;
-		if (trace)
-			System.out.println("* [" + this.name + "].updateTransformedBounds() - "
-					+ applyTranslate + ", " + applyRotate + ", " + applyScale + " -- "
-					+ rectStr(bounds));
-		
-		if (transfBounds == null) transfBounds = new Rectangle();
-		
-		// check if the transformed bounds changed:
-		int px = transfBounds.x;
-		int py = transfBounds.y;
-		int pw = transfBounds.width;
-		int ph = transfBounds.height;
-		
-		if (applyRotate || applyScale) {
-			float x1 = localTMatrix.multX(bounds.x, bounds.y);
-			float y1 = localTMatrix.multY(bounds.x, bounds.y);
-			float x2 = localTMatrix.multX(bounds.x + bounds.width, bounds.y);
-			float y2 = localTMatrix.multY(bounds.x + bounds.width, bounds.y);
-			float x3 = localTMatrix.multX(bounds.x + bounds.width, bounds.y + bounds.height);
-			float y3 = localTMatrix.multY(bounds.x + bounds.width, bounds.y + bounds.height);
-			float x4 = localTMatrix.multX(bounds.x, bounds.y + bounds.height);
-			float y4 = localTMatrix.multY(bounds.x, bounds.y + bounds.height);
-			transfBounds.x = (int) Math.floor(Math.min(Math.min(x1, x2), Math.min(x3, x4)));
-			transfBounds.y = (int) Math.floor(Math.min(Math.min(y1, y2), Math.min(y3, y4)));
-			transfBounds.width = (int) Math.ceil(Math.max(Math.max(x1, x2), Math.max(x3, x4)))
-					- transfBounds.x;
-			transfBounds.height = (int) Math.ceil(Math.max(Math.max(y1, y2), Math.max(y3, y4)))
-					- transfBounds.y;
-		}
-		else if (applyTranslate) {
-			transfBounds.x = (int) Math.floor(bounds.x + x);
-			transfBounds.y = (int) Math.floor(bounds.y + y);
-			transfBounds.width = bounds.width;
-			transfBounds.height = bounds.height;
-		}
-		else {
-			transfBounds.x = bounds.x;
-			transfBounds.y = bounds.y;
-			transfBounds.width = bounds.width;
-			transfBounds.height = bounds.height;
-		}
-		
-		if (px != bounds.x || py != bounds.y || pw != bounds.width || ph != bounds.height) {
-			if (parent != null && !parent.boundsDirty) parent.boundsDirty = true;
-		}
-		
-		transfBoundsDirty = false;
-		if (trace) System.out.println("   result: " + rectStr(transfBounds));
+		return compositeBounds;
 	}
 	
 	// *********************************************************************************************
@@ -1188,7 +1109,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// ---------------------------------------------------------------------------------------------
 	
 	/** The list of child nodes in this node. */
-	protected CopyOnWriteArrayList<IModifier> modifiers;
+	private CopyOnWriteArrayList<IModifier> modifiers;
 	
 	/**
 	 * Add a modifier for this node.
@@ -1198,7 +1119,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	public void addModifier(IModifier modifier) {
 		if (modifiers == null) modifiers = new CopyOnWriteArrayList<IModifier>();
 		modifiers.add(modifier);
-		if (modifiers.size() == 1) invalidateState();
+		if (modifiers.size() == 1 && !updatePending) invalidateUpdate();
 	}
 	
 	/**
@@ -1222,13 +1143,13 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/**
 	 * Call this method when this node needs to be updated.
 	 */
-	final protected void invalidateState() {
+	final protected void invalidateUpdate() {
 		if (updatePending) return;
 		updatePending = true;
 		if (isStage) {
 			if (app != null) app.redraw();
 		}
-		else if (parent != null && !parent.updatePending) parent.invalidateState();
+		else if (parent != null && !parent.updatePending) parent.invalidateUpdate();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -1240,25 +1161,32 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @see SGNode#update()
 	 */
 	final protected void update_sys() {
-		if (disposed || !updatePending) return;
 		boolean trace = false;
+		if (disposed || !updatePending) return;
 		updatePending = false;
 		if (trace) {
-			System.out.println(">> SGNode[" + this.name + "].update_sys() - localTMatrixDirty: "
-					+ localTMatrixDirty);
-			if (maintainBounds) {
-				System.out.println(" + maintainBounds: - boundsDirty: " + boundsDirty
-						+ ", transfBoundsDirty: " + transfBoundsDirty);
+			System.out.println(">> SGNode[" + this.name + "].update_sys()");
+			System.out.println(" - localTMatrixDirty: " + localTMatrixDirty);
+			System.out.println(" - localBoundsChanged: " + localBoundsChanged);
+			System.out.println(" - localCompositeBoundsChanged: " + localCompositeBoundsChanged);
+			System.out.println(" - compositeBoundsChanged: " + compositeBoundsChanged);
+		}
+		
+		// apply the modifiers:
+		if (modifiers != null && modifiers.size() > 0) {
+			for (IModifier modifier : modifiers) {
+				modifier.apply(this);
 			}
+			if (modifiers.size() > 0 && !updatePending) invalidateUpdate();
 		}
 		
 		// update local transformation matrix:
-		if (maintainBounds && localTMatrixDirty) {
+		if (localTMatrixDirty) {
+			if (trace) System.out.println(" * localTMatrixDirty! [" + this.name + "]");
 			localTMatrix.reset();
 			if (applyTranslate) localTMatrix.translate(x, y);
 			if (applyRotate) localTMatrix.rotate(rotation);
-			if (applyScale) localTMatrix.scale(scale, scale, scale);
-			transfBoundsDirty = true;
+			if (applyScale) localTMatrix.scale(scale);
 			localTMatrixDirty = false;
 		}
 		
@@ -1269,18 +1197,18 @@ public class SGNode extends SGNodeBase implements PConstants {
 			}
 		}
 		
-		// apply the modifiers:
-		if (modifiers != null && modifiers.size() > 0) {
-			for (IModifier modifier : modifiers) {
-				modifier.apply(this);
-			}
-			if (modifiers.size() > 0) invalidateState();
+		// Update the local-bounds:
+		if (localBoundsChanged) validateLocalBounds();
+		
+		if (localCompositeBoundsChanged) {
+			if (trace) System.out.println(" * localCompositeBoundsChanged! [" + this.name + "]");
+			localCompositeBoundsChanged = false;
+			if (cached) cacheSizeDirty = true;
 		}
 		
-		// update the bounds when needed:
-		if (maintainBounds) {
-			if (boundsDirty) updateBounds();
-			else if (transfBoundsDirty) updateTransformedBounds();
+		if (compositeBoundsChanged) {
+			if (trace) System.out.println(" * compositeBoundsChanged! [" + this.name + "]");
+			compositeBoundsChanged = false;
 		}
 	}
 	
@@ -1323,34 +1251,20 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * 
 	 * @see invalidateContentFromUpdate
 	 */
-	final public void invalidateContent() {
-		if (disposed || redrawPending) return;
-		// System.out.println(">> SGNode[" + name + "].invalidateContent()");
-		redrawPending = true;
-		
-		if (!visible) return;
-		if (cached) cacheContentDirty = true;
-		if (parent != null) parent.invalidateContent();
-		else if (isStage && app != null) app.redraw();
-	}
-	
-	/**
-	 * Use this method instead of invalidateContent when you want to request a redraw of this node
-	 * from within the update loop.
-	 * 
-	 * @see invalidateContent
-	 */
-	final public void invalidateContentFromUpdate() {
+	final public void redraw() {
+		// System.out.println(">> SGNode[" + name + "].redraw()");
 		if (disposed || redrawPending) return;
 		redrawPending = true;
 		
 		if (!visible) return;
 		if (cached) cacheContentDirty = true;
-		if (parent != null) parent.invalidateContent();
-		// do not call app.redraw() in this version
+		if (parent != null) parent.redraw();
+		else if (isStage && app != null && !app.updateActive) app.redraw();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
+	
+	public boolean drawBounds = true;
 	
 	/**
 	 * A system function that applies the transformations, calls the draw() method for this node and
@@ -1360,25 +1274,31 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @see SGNode#draw(processing.core.PGraphics)
 	 */
 	protected void draw_sys(PGraphics g) {
+		boolean trace = false;
+		if (app.updateActive) throw new Error();
 		if (!visible || disposed) return;
-		// System.out.println(">> SGNode[" + this + "].draw_sys()");
+		if (trace) System.out.println(">> SGNode[" + this + "].draw_sys()");
 		
 		if (cached) {
-			if (bounds.width == 0 || bounds.height == 0) { return; }
+			if (trace) System.out.println(" * cached!");
+			if (cachedBounds == null) cachedBounds = new Rectangle();
 			if (cache == null) {
 				cacheContentDirty = true;
-				initCache();
+				cachedBounds.setBounds(getLocalCompositeBounds());
+				cache = app.createGraphics(cachedBounds.width, cachedBounds.height);
 			}
 			else if (cacheSizeDirty) {
 				cacheContentDirty = true;
-				resizeCache();
+				cachedBounds.setBounds(getLocalCompositeBounds());
+				cache = app.createGraphics(cachedBounds.width, cachedBounds.height);
 				cacheSizeDirty = false;
 			}
 			
 			if (cacheContentDirty) {
+				if (trace) System.out.println(" * cacheContentDirty!");
 				cache.beginDraw();
 				cache.resetMatrix();
-				cache.translate(-bounds.x, -bounds.y);
+				cache.translate(-cachedBounds.x, -cachedBounds.y);
 				cache.clear();
 				draw(cache);
 				if (hasChildren) {
@@ -1391,8 +1311,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 			}
 			
 			applyTransformation(g);
-			g.copy(cache, 0, 0, bounds.width, bounds.height, bounds.x, bounds.y, bounds.width,
-					bounds.height);
+			g.copy(cache, 0, 0, cachedBounds.width, cachedBounds.height, cachedBounds.x,
+					cachedBounds.y, cachedBounds.width, cachedBounds.height);
 		}
 		else {
 			applyTransformation(g);
@@ -1406,21 +1326,36 @@ public class SGNode extends SGNodeBase implements PConstants {
 			}
 		}
 		
+		// if (drawBounds) {
+		// g.stroke(0x88FF0000);
+		// g.strokeWeight(1);
+		// g.noFill();
+		// g.rect(localCompositeBounds.x, localCompositeBounds.y, localCompositeBounds.width,
+		// localCompositeBounds.height);
+		// }
+		
 		if (applyTransformation) g.popMatrix();
 		inverseTMatrixDirty = false;
 		redrawPending = false;
 	}
 	
 	protected void applyTransformation(PGraphics g) {
+		boolean trace = false;
+		if (trace) {
+			System.out.println(">> SGNode[" + this + "].applyTransformation()");
+			System.out.println(" - matrix:");
+			printMatrix(g.getMatrix());
+		}
 		if (applyTransformation) {
 			g.pushMatrix();
 			if (is3D) { // 3D node
-				if (applyTranslate) g.translate(x, y, z);
-				if (applyRotate) {
-					if (rotationX != 0) g.rotateX(rotationX);
-					if (rotationY != 0) g.rotateY(rotationY);
-					if (rotationZ != 0) g.rotateZ(rotationZ);
-				}
+				throw new Error("3D is currently not supported.");
+				// if (applyTranslate) g.translate(x, y, z);
+				// if (applyRotate) {
+				// if (rotationX != 0) g.rotateX(rotationX);
+				// if (rotationY != 0) g.rotateY(rotationY);
+				// if (rotationZ != 0) g.rotateZ(rotationZ);
+				// }
 			}
 			else { // 2D-scene-graph
 					// if (applyTranslate) System.out.println(" translate(" + x + ", " + y + ")");
@@ -1431,14 +1366,99 @@ public class SGNode extends SGNodeBase implements PConstants {
 		}
 		
 		// update the locally stored transformation matrix:
-		if (inverseTMatrixDirty && g.is2D()) {
-			// System.out.println("* transformMatrixDirty [" + this + "]");
-			// app.printMatrix();
+		if (inverseTMatrixDirty) {
+			if (trace) System.out.println("* transformMatrixDirty [" + this + "]");
 			
 			// update the inverse transformation matrix:
-			inverseTMatrix = (PMatrix2D) g.getMatrix();
+			inverseTMatrix = g.getMatrix();
 			inverseTMatrix.invert();
+			if (trace) printInverseTMatrix();
 		}
+	}
+	
+	// *********************************************************************************************
+	// Transformation matrix functionality:
+	// ---------------------------------------------------------------------------------------------
+	
+	/**
+	 * The locally maintained inverse of the transformation-matrix. It is updated each time the
+	 * translation, rotation of scale was modified and this node is redrawn.
+	 * 
+	 * This matrix is used to map coordinates -such as mouse coordinates- from the top-level
+	 * application coordinate system to the the coordinate system valid inside this node.
+	 * 
+	 * This matrix is actually updated in the draw-traversal. The value is invalid as long as
+	 * inverseTMatrixDirty is true;
+	 */
+	private PMatrix inverseTMatrix = new PMatrix2D();
+	
+	/**
+	 * True when the value of inverseTMatrix is no longer valid.
+	 */
+	private boolean inverseTMatrixDirty = false;
+	
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	/**
+	 * The transformation-matrix in which only the transformations specified on this node are
+	 * represented. It is updated each time the translation, rotation of scale was modified and this
+	 * node is redrawn.
+	 * 
+	 * This matrix is used to map the bounds of child-nodes to their parent nodes.
+	 */
+	private PMatrix2D localTMatrix = new PMatrix2D();
+	
+	/* True when the localTMatrix is not valid. */
+	private boolean localTMatrixDirty = true;
+	
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	/**
+	 * Call this method when some aspect of the transformation of this node has changed. It flags
+	 * the locally stored inverse of the transformation matrix as dirty, so that it is updated
+	 * during the next draw-traversal.
+	 */
+	private void invalidateTransformation() {
+		inverseTMatrixDirty = true;
+		localTMatrixDirty = true;
+		if (hasChildren) for (SGNode child : children) {
+			child.invalidateTransformation();
+		}
+		redraw();
+		// Do not invalidate the composite-bounds here. Doing so would also invalidate the
+		// composite-bounds in the children of this node, which is not necesssary.
+	}
+	
+	protected void printInverseTMatrix() {
+		printMatrix(inverseTMatrix);
+	}
+	
+	protected void printMatrix(PMatrix matrix) {
+		if (matrix.getClass() == PMatrix2D.class) ((PMatrix2D) matrix).print();
+		else if (matrix.getClass() == PMatrix3D.class) ((PMatrix3D) matrix).print();
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	/**
+	 * @param globalX The x-component of the global coordinate that should be mapped to a local
+	 *            coordinate.
+	 * @param globalY The y-component of the global coordinate that should be mapped to a local
+	 *            coordinate.
+	 * 
+	 * @return The local coordinate to which the given global coordinate maps.
+	 */
+	public PVector globalToLocal(float globalX, float globalY) {
+		return inverseTMatrix.mult(new PVector(globalX, globalY), null);
+	}
+	
+	/**
+	 * @param globalCoord The global coordinate that should be mapped to a local coordinate.
+	 * 
+	 * @return The local coordinate to which the given global coordinate maps.
+	 */
+	public PVector globalToLocal(PVector globalCoord) {
+		return inverseTMatrix.mult(globalCoord, null);
 	}
 	
 	// *********************************************************************************************
@@ -1456,6 +1476,9 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	/* True when the cache size is dirty. */
 	private boolean cacheSizeDirty = false;
+	
+	/* The cached surface bounds. */
+	private Rectangle cachedBounds;
 	
 	// ---------------------------------------------------------------------------------------------
 	
@@ -1476,14 +1499,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (app.g.is3D()) { throw new Error("Caching is currently not supported for 3D content."); }
 		if (this.cached == cached) return;
 		this.cached = cached;
-		if (cached) {
-			cacheContentDirty = true;
-			maintainBounds();
-		}
-		else {
-			clearCache();
-			unmaintainBounds();
-		}
+		if (cached) cacheContentDirty = true;
+		else clearCache();
 	}
 	
 	/**
@@ -1495,155 +1512,73 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	/**
-	 * Initialized the cache.
-	 */
-	private void initCache() {
-		if (cache != null) clearCache();
-		cache = app.createGraphics(bounds.width, bounds.height);
-	}
-	
-	private void resizeCache() {
-		clearCache();
-		cache = app.createGraphics(bounds.width, bounds.height);
-	}
-	
 	private void clearCache() {
 		cache = null; // There is no proper dispose() method on PImage.
+		cachedBounds = null;
 		cacheContentDirty = false;
 		cacheSizeDirty = false;
 	}
 	
 	// *********************************************************************************************
-	// Transformation matrix functionality:
+	// Contains functionality:
 	// ---------------------------------------------------------------------------------------------
 	
-	/**
-	 * The locally maintained inverse of the transformation-matrix. It is updated each time the
-	 * translation, rotation of scale was modified and this node is redrawn.
-	 * 
-	 * This matrix is used to map coordinates -such as mouse coordinates- from the coordinate system
-	 * valid inside this node and the top-level application coordinate system. This matrix is
-	 * currently only maintained when this node dispatches mouse-events.
-	 */
-	protected PMatrix2D inverseTMatrix = new PMatrix2D();
-	
-	/**
-	 * True when the translation, rotation of scale was modified and as a consequence the locally
-	 * maintained transformation-matrix is no longer valid.
-	 */
-	protected boolean inverseTMatrixDirty = false;
-	
-	/** True when the inverse of the transformation matrix should be maintained for this node. */
-	protected boolean maintainInverseTMatrix = false;
+	public boolean checkContainsInChildren = false;
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
 	/**
-	 * The transformation-matrix in which only the transformations specified on this node are
-	 * represented. It is updated each time the translation, rotation of scale was modified and this
-	 * node is redrawn.
+	 * This method needs to be implemented in all nodes that draw interactive content.
 	 * 
-	 * This matrix is used to map the bounds of child-nodes to their parent nodes.
+	 * @return True when the given point is contained by the graphical content of this node.
+	 * 
+	 * @see SGNode#enableMouseEventMethods()
+	 * @see SGNode#addMouseEventHandler(SGMouseEventHandler)
 	 */
-	protected PMatrix2D localTMatrix = new PMatrix2D();
-	
-	/* True when the localTMatrix is not valid. */
-	private boolean localTMatrixDirty = true;
-	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	protected boolean contains(float x, float y) {
+		return false;
+	}
 	
 	/**
-	 * Call this method when maintainTransformMatrix is true and some aspect of the transformation
-	 * of this node has changed. It flags the locally stored inverse of the transformation matrix as
-	 * dirty, so that it is updated during the next draw-traversal.
+	 * @return True when the given point is contained by the graphical content of this node.
+	 * 
+	 * @see SGNode#enableMouseEventMethods()
+	 * @see SGNode#addMouseEventHandler(SGMouseEventHandler)
 	 */
-	private void invalidateTMatrix() {
-		if (maintainInverseTMatrix) {
-			inverseTMatrixDirty = true;
-			mouseXDirty = true;
-			mouseYDirty = true;
-			if (hasChildren) for (SGNode child : children) {
-				if (child.maintainInverseTMatrix) child.invalidateTMatrix();
-				child.invalidateContent();
+	private boolean contains_sys(float x, float y) {
+		if (!visible) return false;
+		Rectangle bounds = getLocalBounds();
+		if ((x >= bounds.x) && (y >= bounds.y) && (x < bounds.x + bounds.width)
+				&& (y < bounds.y + bounds.height) && contains(x, y)) return true;
+		if (checkContainsInChildren) {
+			for (int i = children.size() - 1; i >= 0; i--) {
+				SGNode child = children.get(i);
+				if (child.contains_sys(child.getMousePosition())) return true;
 			}
 		}
-		if (maintainBounds) localTMatrixDirty = true;
+		return false;
 	}
 	
 	/**
-	 * Debug method that prints the transformation matrix.
+	 * @return True when the given point is contained by the graphical content of this node.
+	 * 
+	 * @see SGNode#enableMouseEventMethods()
+	 * @see SGNode#addMouseEventHandler(SGMouseEventHandler)
 	 */
-	public void printTransformMatrix() {
-		System.out.println("- transformMatrix: " + inverseTMatrix.m00 + ", " + inverseTMatrix.m01
-				+ ", " + inverseTMatrix.m02 + " / " + inverseTMatrix.m10 + ", "
-				+ inverseTMatrix.m11 + ", " + inverseTMatrix.m12);
-	}
-	
-	// ---------------------------------------------------------------------------------------------
-	
-	/**
-	 * @param globalX The x-component of the global coordinate that should be mapped to a local
-	 *            coordinate.
-	 * @param globalY The y-component of the global coordinate that should be mapped to a local
-	 *            coordinate.
-	 * @return The x-component of the local coordinate to which the given global coordinate maps.
-	 */
-	public float getLocalX(float globalX, float globalY) {
-		return inverseTMatrix.multX(globalX, globalY);
-	}
-	
-	/**
-	 * @param globalX The x-component of the global coordinate that should be mapped to a local
-	 *            coordinate.
-	 * @param globalY The y-component of the global coordinate that should be mapped to a local
-	 *            coordinate.
-	 * @return The y-component of the local coordinate to which the given global coordinate maps.
-	 */
-	public float getLocalY(float globalX, float globalY) {
-		return inverseTMatrix.multY(globalX, globalY);
-	}
-	
-	/**
-	 * @param globalX The x-component of the global coordinate that should be mapped to a local
-	 *            coordinate.
-	 * @param globalY The y-component of the global coordinate that should be mapped to a local
-	 *            coordinate.
-	 * @return The local coordinate to which the given global coordinate maps.
-	 */
-	public Point2D.Float getLocalCoord(float globalX, float globalY) {
-		return new Point2D.Float(inverseTMatrix.multY(globalX, globalY), inverseTMatrix.multY(
-				globalX, globalY));
-	}
-	
-	/**
-	 * @param globalCoord The global coordinate that should be mapped to a local coordinate.
-	 * @return The local coordinate to which the given global coordinate maps.
-	 */
-	public Point2D.Float getLocalCoord(Point2D.Float globalCoord) {
-		return new Point2D.Float(inverseTMatrix.multY(globalCoord.x, globalCoord.y),
-				inverseTMatrix.multY(globalCoord.x, globalCoord.y));
+	private boolean contains_sys(PVector point) {
+		return contains_sys(point.x, point.y);
 	}
 	
 	// *********************************************************************************************
 	// Mouse functionality:
 	// ---------------------------------------------------------------------------------------------
 	
-	/*
-	 * True when the mouse-events have been directly enabled by calling the enableMouseEvents()
-	 * method. Do not modify this property.
-	 */
-	private boolean mouseEventsEnabled = false;
+	/* The node over which the mouse currently hovers. */
+	static SGNode currentOverNode;
 	
 	/*
 	 * True when at least one mouse-event-handler has been registered on this node using
 	 * addMouseEventHandler(). Do not modify this property.
-	 */
-	private boolean mouseHandlerAdded = false;
-	
-	/*
-	 * True when this node needs to dispatch mouse-events, i.e. when either mouseEventsEnabled or
-	 * mouseHandlerAdded is true. Do not modify this property.
 	 */
 	private boolean dispatchMouseEvents = false;
 	
@@ -1663,80 +1598,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/* The collection of registered mouse-event-handlers. */
 	private CopyOnWriteArraySet<SGMouseEventHandler> mouseHandlers = new CopyOnWriteArraySet<SGMouseEventHandler>();
 	
-	/*
-	 * True when the mouse-cursor is currently over this node as determined by the mouseHitTest()
-	 * implementation.
-	 */
-	private boolean mouseIsOver = false;
-	
 	/* True when the mouse was pressed while the cursor was over this node. */
 	private boolean mouseWasPressed = false;
-	
-	/*
-	 * Memoises the x-position of the mouse-cursor. This value becomes invalid when the mouse moves.
-	 * Therefore only access this property through the getMouseX() method, which updates this value
-	 * when needed.
-	 */
-	private int mouseX;
-	
-	/*
-	 * Memoises the y-position of the mouse-cursor. This value becomes invalid when the mouse moves.
-	 * Therefore only access this property through the getMouseY() method, which updates this value
-	 * when needed.
-	 */
-	private int mouseY;
-	
-	/* True when the mouseX value is no longer valid. */
-	private boolean mouseXDirty = false;
-	
-	/* True when the mouseY value is no longer valid. */
-	private boolean mouseYDirty = false;
-	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	/**
-	 * Call this method if the mouse-event-handlers on this node need to be called. Note that
-	 * mouse-events will only be dispatched for classes that properly implement the mouseHitTest()
-	 * method.
-	 * 
-	 * @see SGNode#mouseHitTest()
-	 * @see SGNode#disableMouseEvents()
-	 */
-	public final void enableMouseEvents() {
-		mouseEventsEnabled = true;
-		updateMouseFlags();
-	}
-	
-	/**
-	 * Call this method if the mouse-event-handlers on this node no longer need to be called.
-	 * 
-	 * @see SGNode#enableMouseEvents()
-	 */
-	public final void disableMouseEvents() {
-		mouseEventsEnabled = false;
-		updateMouseFlags();
-	}
-	
-	/**
-	 * This method needs to be implemented in node-classes that should dispatch mouse-events.
-	 * 
-	 * @return True when the mouse is over this node.
-	 * 
-	 * @see SGNode#enableMouseEvents()
-	 * @see SGNode#addMouseEventHandler(SGMouseEventHandler)
-	 */
-	protected boolean mouseHitTest() {
-		if (!visible) return false;
-		if (children.size() == 0) {
-			throw new Error("The mouseHitTest() method is not implemented for "
-					+ getClass().getName() + ".");
-		}
-		else {
-			for (SGNode child : children)
-				if (child.mouseHitTest()) return true;
-		}
-		return false;
-	}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
@@ -1751,7 +1614,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public void addMouseEventHandler(SGMouseEventHandler handler) {
 		if (mouseHandlers.add(handler) && mouseHandlers.size() == 1) {
-			mouseHandlerAdded = true;
+			dispatchMouseEvents = true;
 			updateMouseFlags();
 		}
 	}
@@ -1765,249 +1628,171 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public void removeMouseEventHandler(SGMouseEventHandler handler) {
 		if (mouseHandlers.remove(handler) && mouseHandlers.size() == 0) {
-			mouseHandlerAdded = false;
+			dispatchMouseEvents = false;
 			updateMouseFlags();
+			if (currentOverNode == this) currentOverNode = null;
+			mouseWasPressed = false;
 		}
 	}
 	
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
 	private void updateMouseFlags() {
-		dispatchMouseEvents = mouseEventsEnabled || mouseHandlerAdded;
-		
-		if (mouseEventsEnabled || mouseHandlerAdded || forwardSysMouseEvents) {
-			wantsSysMouseEvents = true;
-			maintainInverseTMatrix = true;
+		if (dispatchMouseEvents || forwardSysMouseEvents) {
+			if (!wantsSysMouseEvents) {
+				wantsSysMouseEvents = true;
+				if (parent != null) parent.forwardMouseEventsTo(this);
+			}
 		}
 		else {
-			wantsSysMouseEvents = false;
-			maintainInverseTMatrix = false;
-			mouseIsOver = false;
-			mouseWasPressed = false;
-			mouseXDirty = true;
-			mouseYDirty = true;
+			if (wantsSysMouseEvents) {
+				wantsSysMouseEvents = false;
+				if (parent != null) parent.unforwardMouseEventsTo(this);
+			}
 		}
 	}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Mouse-event dispatch helper methods.
 	
-	private void dispatchMouseClicked() {
-		mouseClicked();
+	private void dispatchMouseClicked(PVector mousePosition) {
 		for (SGMouseEventHandler handler : mouseHandlers)
-			handler.mouseClicked(this);
+			handler.mouseClicked(this, mousePosition);
 	}
 	
-	private void dispatchMouseOver() {
-		mouseOver();
+	private void dispatchMousePressed(PVector mousePosition) {
 		for (SGMouseEventHandler handler : mouseHandlers)
-			handler.mouseOver(this);
+			handler.mousePressed(this, mousePosition);
 	}
 	
-	private void dispatchMouseOut() {
-		mouseOut();
+	private void dispatchMouseReleased(PVector mousePosition) {
 		for (SGMouseEventHandler handler : mouseHandlers)
-			handler.mouseOut(this);
+			handler.mouseReleased(this, mousePosition);
 	}
 	
-	private void dispatchMouseMoved() {
-		mouseMoved();
+	private void dispatchMouseOver(PVector mousePosition, boolean dragged) {
 		for (SGMouseEventHandler handler : mouseHandlers)
-			handler.mouseMoved(this);
+			handler.mouseOver(this, mousePosition, dragged);
 	}
 	
-	private void dispatchMousePressed() {
-		mousePressed();
+	private void dispatchMouseOut(PVector mousePosition, boolean dragged) {
 		for (SGMouseEventHandler handler : mouseHandlers)
-			handler.mousePressed(this);
+			handler.mouseOut(this, mousePosition, dragged);
 	}
 	
-	private void dispatchMouseReleased() {
-		mouseReleased();
+	void dispatchMouseOut() {
 		for (SGMouseEventHandler handler : mouseHandlers)
-			handler.mouseReleased(this);
+			handler.mouseOut(this, getMousePosition(), false);
 	}
 	
-	private void dispatchMouseDragged() {
-		mouseDragged();
+	private void dispatchMouseMoved(PVector mousePosition, boolean dragged) {
 		for (SGMouseEventHandler handler : mouseHandlers)
-			handler.mouseDragged(this);
+			handler.mouseMoved(this, mousePosition, dragged);
 	}
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	/**
-	 * This method is called when the mouse was clicked while the cursor was over this node as
-	 * determined by the implementation of the mouseHitTest() method. Override this method to handle
-	 * this mouse-event. Alternatively a mouse-event handler can be registered.
-	 * 
-	 * @see SGNode#mouseHitTest()
-	 * @see SGNode#addMouseEventHandler(SGMouseEventHandler)
-	 */
-	protected void mouseClicked() {}
+	/* Vector to be reused in getMousePosition. */
+	private PVector tempMouseVector = new PVector();
 	
 	/**
-	 * This method is called when the cursor moved onto this node as determined by the
-	 * implementation of the mouseHitTest() method. Override this method to handle this mouse-event.
-	 * Alternatively a mouse-event handler can be registered.
-	 * 
-	 * @see SGNode#mouseHitTest()
-	 * @see SGNode#addMouseEventHandler(SGMouseEventHandler)
+	 * @return The position of the mouse as local coordinates.
 	 */
-	protected void mouseOver() {}
-	
-	/**
-	 * This method is called when the cursor moved out of this node as determined by the
-	 * implementation of the mouseHitTest() method. Override this method to handle this mouse-event.
-	 * Alternatively a mouse-event handler can be registered.
-	 * 
-	 * @see SGNode#mouseHitTest()
-	 * @see SGNode#addMouseEventHandler(SGMouseEventHandler)
-	 */
-	protected void mouseOut() {}
-	
-	/**
-	 * This method is called when the cursor moved over of this node as determined by the
-	 * implementation of the mouseHitTest() method. Override this method to handle this mouse-event.
-	 * Alternatively a mouse-event handler can be registered.
-	 * 
-	 * @see SGNode#mouseHitTest()
-	 * @see SGNode#addMouseEventHandler(SGMouseEventHandler)
-	 */
-	protected void mouseMoved() {}
-	
-	/**
-	 * This method is called when the mouse-button was pressed while the cursor was over this nod as
-	 * determined by the implementation of the mouseHitTest() method. Override this method to handle
-	 * this mouse-event. Alternatively a mouse-event handler can be registered.
-	 * 
-	 * @see SGNode#mouseHitTest()
-	 * @see SGNode#addMouseEventHandler(SGMouseEventHandler)
-	 */
-	protected void mousePressed() {}
-	
-	/**
-	 * This method is called when the mouse-button was released after it was pressed while the
-	 * cursor was over this node as determined by the implementation of the mouseHitTest() method.
-	 * Override this method to handle this mouse-event. Alternatively a mouse-event handler can be
-	 * registered.
-	 * 
-	 * @see SGNode#mouseHitTest()
-	 * @see SGNode#addMouseEventHandler(SGMouseEventHandler)
-	 */
-	protected void mouseReleased() {}
-	
-	/**
-	 * TODO
-	 */
-	protected void mouseDragged() {}
-	
-	// ---------------------------------------------------------------------------------------------
-	
-	/**
-	 * @return the horizontal position of the mouse-cursor
-	 */
-	public int getMouseX() {
-		if (mouseXDirty) {
-			mouseX = (int) Math.floor(getLocalX(app.mouseX, app.mouseY));
-			mouseXDirty = false;
-		}
-		return mouseX;
-	}
-	
-	/**
-	 * @return the vertical position of the mouse-cursor
-	 */
-	public int getMouseY() {
-		if (mouseYDirty) {
-			mouseY = (int) Math.floor(getLocalY(app.mouseX, app.mouseY));
-			mouseYDirty = false;
-		}
-		return mouseY;
+	public PVector getMousePosition() {
+		return inverseTMatrix.mult(app.getMouseVector(), tempMouseVector);
 	}
 	
 	// ---------------------------------------------------------------------------------------------
 	// system mouse methods:
 	
 	/* System method. */
-	void mouseClicked_sys() {
-		if (dispatchMouseEvents && mouseHitTest()) dispatchMouseClicked();
-		if (forwardSysMouseEvents) {
-			for (SGNode child : mouseChildren)
-				if (child.visible) child.mouseClicked_sys();
-		}
-	}
-	
-	/* System method. */
-	void mousePressed_sys() {
-		if (dispatchMouseEvents && mouseHitTest()) {
-			mouseWasPressed = true;
-			dispatchMousePressed();
-		}
-		if (forwardSysMouseEvents) {
-			for (SGNode child : mouseChildren) {
-				if (child.visible) child.mousePressed_sys();
-			}
-		}
-	}
-	
-	/* System method. */
-	void mouseReleased_sys() {
-		if (dispatchMouseEvents && mouseWasPressed) {
-			mouseWasPressed = false;
-			dispatchMouseReleased();
-		}
-		if (forwardSysMouseEvents) {
-			for (SGNode child : mouseChildren) {
-				if (child.visible) child.mouseReleased_sys();
-			}
-		}
-	}
-	
-	/* System method. */
-	void mouseMoved_sys() {
-		// println(">> " + this + ".mouseMoved_sys() - mouseXDirty = true");
+	void mouseClicked_sys(MouseSystemEvent msEvent) {
+		boolean trace = false;
+		if (trace) System.out.println(">> SGNode[" + this + "].mouseClicked_sys()");
+		if (!visible) return;
 		if (dispatchMouseEvents) {
-			mouseXDirty = true;
-			mouseYDirty = true;
-			if (mouseHitTest()) {
-				if (!mouseIsOver) {
-					mouseIsOver = true;
-					dispatchMouseOver();
-				}
-				else dispatchMouseMoved();
-			}
-			else if (mouseIsOver) {
-				mouseIsOver = false;
-				dispatchMouseOut();
+			PVector mousePos = getMousePosition();
+			if (trace) System.out.println(" - mousePos: " + mousePos.x + ", " + mousePos.y);
+			if (contains_sys(mousePos)) {
+				if (trace) System.out.println(" - contained!");
+				msEvent.consumed = true;
+				dispatchMouseClicked(mousePos);
 			}
 		}
-		if (forwardSysMouseEvents) {
-			for (SGNode child : mouseChildren) {
-				if (child.visible) child.mouseMoved_sys();
+		else if (forwardSysMouseEvents) {
+			if (trace) System.out.println(" - forwardSysMouseEvents!");
+			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
+				mouseChildren.get(i).mouseClicked_sys(msEvent);
+				if (msEvent.consumed) return;
 			}
 		}
 	}
 	
 	/* System method. */
-	void mouseDragged_sys() {
-		// println(">> SGNode.mouseDragged_sys()");
+	void mousePressed_sys(MouseSystemEvent msEvent) {
+		if (!visible) return;
 		if (dispatchMouseEvents) {
-			mouseXDirty = true;
-			mouseYDirty = true;
-			if (mouseHitTest()) {
-				if (!mouseIsOver) {
-					mouseIsOver = true;
-					dispatchMouseOver();
-				}
-				else dispatchMouseDragged();
-			}
-			else if (mouseIsOver) {
-				mouseIsOver = false;
-				dispatchMouseOut();
+			PVector mousePos = getMousePosition();
+			if (contains_sys(mousePos)) {
+				mouseWasPressed = true;
+				msEvent.consumed = true;
+				dispatchMousePressed(mousePos);
 			}
 		}
-		if (forwardSysMouseEvents) {
-			for (SGNode child : mouseChildren) {
-				if (child.visible) child.mouseDragged_sys();
+		else if (forwardSysMouseEvents) {
+			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
+				mouseChildren.get(i).mousePressed_sys(msEvent);
+				if (msEvent.consumed) return;
+			}
+		}
+	}
+	
+	/* System method. */
+	void mouseReleased_sys(MouseSystemEvent msEvent) {
+		if (!visible) return;
+		if (dispatchMouseEvents) {
+			PVector mousePos = getMousePosition();
+			if (contains_sys(mousePos)) {
+				mouseWasPressed = false;
+				msEvent.consumed = true;
+				dispatchMouseReleased(mousePos);
+			}
+		}
+		else if (forwardSysMouseEvents) {
+			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
+				mouseChildren.get(i).mouseReleased_sys(msEvent);
+				if (msEvent.consumed) return;
+			}
+		}
+	}
+	
+	private boolean traceMMove = false;
+	
+	/* System method. */
+	void mouseMoved_sys(MouseSystemEvent msEvent, boolean dragged) {
+		if (!visible) return;
+		if (traceMMove) println(">> " + this + ".mouseMoved_sys() - dragged: " + dragged);
+		if (dispatchMouseEvents) {
+			PVector mousePos = getMousePosition();
+			if (contains_sys(mousePos)) {
+				msEvent.consumed = true;
+				if (currentOverNode == this) dispatchMouseMoved(mousePos, dragged);
+				else {
+					if (currentOverNode != null && currentOverNode.wantsSysMouseEvents)
+						currentOverNode.dispatchMouseOut();
+					currentOverNode = this;
+					dispatchMouseOver(mousePos, dragged);
+				}
+			}
+			else if (currentOverNode == this) {
+				currentOverNode = null;
+				dispatchMouseOut(mousePos, dragged);
+			}
+		}
+		else if (forwardSysMouseEvents) {
+			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
+				mouseChildren.get(i).mouseMoved_sys(msEvent, dragged);
+				if (msEvent.consumed) return;
 			}
 		}
 	}
@@ -2024,7 +1809,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * 
 	 * @param node The child-node that wants to receive system-mouse-events.
 	 */
-	protected void forwardMouseEventTo(SGNode child) {
+	protected void forwardMouseEventsTo(SGNode child) {
 		if (!mouseChildren.contains(child)) {
 			mouseChildren.add(child);
 			if (mouseChildren.size() == 1) {
@@ -2291,11 +2076,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	@Override
 	public String toString() {
 		return name;
-	}
-	
-	/* Returns a string that represents the data from the given rectangle. */
-	private String rectStr(Rectangle r) {
-		return "" + r.x + ", " + r.y + ", " + r.width + ", " + r.height;
 	}
 	
 }

@@ -322,7 +322,7 @@ public class SGImage extends SGNode {
 		if (this.explicitWidth == explicitWidth) return;
 		this.explicitWidth = explicitWidth;
 		updateImageParams();
-		invalidateContent();
+		redraw();
 	}
 	
 	/**
@@ -333,7 +333,7 @@ public class SGImage extends SGNode {
 		if (this.explicitHeight == explicitHeight) return;
 		this.explicitHeight = explicitHeight;
 		updateImageParams();
-		invalidateContent();
+		redraw();
 	}
 	
 	/**
@@ -351,7 +351,7 @@ public class SGImage extends SGNode {
 		if (this.imageMode == imageMode) return this;
 		imageMode = imageMode;
 		updateImageParams();
-		invalidateContent();
+		redraw();
 		return this;
 	}
 	
@@ -370,14 +370,14 @@ public class SGImage extends SGNode {
 		if (this.sourceImg == image) return this;
 		this.sourceImg = image;
 		updateImageParams();
-		invalidateContent();
+		redraw();
 		return this;
 	}
 	
 	public SGImage noTint() {
 		if (!applyTint) return this;
 		applyTint = false;
-		invalidateContent();
+		redraw();
 		return this;
 	}
 	
@@ -386,7 +386,7 @@ public class SGImage extends SGNode {
 		tintRGB = rgb;
 		tintAlpha = alpha;
 		applyTint = true;
-		invalidateContent();
+		redraw();
 		return this;
 	}
 	
@@ -406,7 +406,7 @@ public class SGImage extends SGNode {
 	public SGImage setBlendMode(int blendMode) {
 		if (this.blendMode == blendMode) return this;
 		this.blendMode = blendMode;
-		invalidateContent();
+		redraw();
 		return this;
 	}
 	
@@ -465,14 +465,9 @@ public class SGImage extends SGNode {
 	
 	/* @see be.multec.sg.SGNode#mouseHitTest() */
 	@Override
-	protected boolean mouseHitTest() {
+	protected boolean contains(float x, float y) {
 		if (imgWidth == 0 || imgHeight == 0) return false;
-		float tx = getMouseX();
-		if (tx >= 0 && tx < imgWidth) {
-			float ty = getMouseY();
-			return ty >= 0 && ty < imgHeight;
-		}
-		return false;
+		return x >= 0 && x < imgWidth && y >= 0 && y < imgHeight;
 	}
 	
 	// *********************************************************************************************

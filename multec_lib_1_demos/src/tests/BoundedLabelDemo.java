@@ -3,7 +3,6 @@ package tests;
 import java.awt.Color;
 import java.awt.Rectangle;
 
-import processing.core.PApplet;
 import processing.core.PGraphics;
 import be.multec.sg.SGApp;
 import be.multec.sg.SGNode;
@@ -29,7 +28,7 @@ public class BoundedLabelDemo extends SGWindow {
 	
 	public static void main(String[] args) {
 		BoundedLabelDemo app = new BoundedLabelDemo();
-		app.open("LabelDemo", 50, 30, 750, 750, new Color(0xFFCC00));
+		app.open("Bounded Labels Demo", 50, 30, 750, 750, new Color(0xFFCC00));
 	}
 	
 	// *********************************************************************************************
@@ -49,6 +48,11 @@ public class BoundedLabelDemo extends SGWindow {
 			g.line(0, -9, 0, 10);
 			g.line(-9, 0, 10, 0);
 		}
+		/* @see be.multec.sg.SGNode#updateLocalBounds(java.awt.Rectangle) */
+		@Override
+		protected void updateLocalBounds(Rectangle localBounds) {
+			localBounds.setBounds(-9, -9, 20, 20);
+		}
 		
 	}
 	
@@ -62,7 +66,7 @@ public class BoundedLabelDemo extends SGWindow {
 		noLoop();
 		
 		Color bgColor = new Color(0x77FFFFFF, true);
-
+		
 		ILabelStyles normalStyles = new SGLabelStyles();
 		normalStyles.setTextSize(18);
 		normalStyles.setFont(loadFont("TheSans-Light-36.vlw"));
@@ -78,11 +82,11 @@ public class BoundedLabelDemo extends SGWindow {
 		paddingStyles.setFont(loadFont("TheSans-Light-36.vlw"));
 		paddingStyles.setBackgroundColor(bgColor);
 		paddingStyles.setPadding(5);
-
+		
 		ILabelStyles headerStyles = new SGLabelStyles();
 		headerStyles.setTextSize(22);
 		headerStyles.setFont(loadFont("TheSans-Light-36.vlw"));
-
+		
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		
 		addNode(new SGLabel(this, "Label mode: SIMPLE - no padding", headerStyles), 20, 30);
@@ -90,16 +94,16 @@ public class BoundedLabelDemo extends SGWindow {
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		
 		addNode(new CrossMark(this), 20, 40);
-		addBounded(new SGLabel(this, "Label (left, top)", normalStyles, SGLabelMode.SIMPLE, HAlignMode.LEFT,
-				VAlignMode.TOP).setBackground(bgColor), 20, 40);
+		addBounded(new SGLabel(this, "Label (left, top)", normalStyles, SGLabelMode.SIMPLE,
+				HAlignMode.LEFT, VAlignMode.TOP).setBackground(bgColor), 20, 40);
 		
 		addNode(new CrossMark(this), 340, 40);
-		addBounded(new SGLabel(this, "Label (center, top)", normalStyles, SGLabelMode.SIMPLE, HAlignMode.CENTER,
-				VAlignMode.TOP).setBackground(bgColor), 340, 40);
+		addBounded(new SGLabel(this, "Label (center, top)", normalStyles, SGLabelMode.SIMPLE,
+				HAlignMode.CENTER, VAlignMode.TOP).setBackground(bgColor), 340, 40);
 		
 		addNode(new CrossMark(this), 660, 40);
-		addBounded(new SGLabel(this, "Label (right, top)", normalStyles, SGLabelMode.SIMPLE, HAlignMode.RIGHT,
-				VAlignMode.TOP).setBackground(bgColor), 660, 40);
+		addBounded(new SGLabel(this, "Label (right, top)", normalStyles, SGLabelMode.SIMPLE,
+				HAlignMode.RIGHT, VAlignMode.TOP).setBackground(bgColor), 660, 40);
 		
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		
@@ -118,30 +122,30 @@ public class BoundedLabelDemo extends SGWindow {
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		
 		addNode(new CrossMark(this), 20, 129);
-		addBounded(new SGLabel(this, "Label (left, center)", normalStyles, SGLabelMode.SIMPLE, HAlignMode.LEFT,
-				VAlignMode.CENTER).setBackground(bgColor), 20, 129);
+		addBounded(new SGLabel(this, "Label (left, center)", normalStyles, SGLabelMode.SIMPLE,
+				HAlignMode.LEFT, VAlignMode.CENTER).setBackground(bgColor), 20, 129);
 		
 		addNode(new CrossMark(this), 340, 129);
 		addBounded(new SGLabel(this, "Label (center, center)", normalStyles, SGLabelMode.SIMPLE,
 				HAlignMode.CENTER, VAlignMode.CENTER).setBackground(bgColor), 340, 129);
 		
 		addNode(new CrossMark(this), 660, 129);
-		addBounded(new SGLabel(this, "Label (right, center)", normalStyles, SGLabelMode.SIMPLE, HAlignMode.RIGHT,
-				VAlignMode.CENTER).setBackground(bgColor), 660, 129);
+		addBounded(new SGLabel(this, "Label (right, center)", normalStyles, SGLabelMode.SIMPLE,
+				HAlignMode.RIGHT, VAlignMode.CENTER).setBackground(bgColor), 660, 129);
 		
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		
 		addNode(new CrossMark(this), 20, 170);
-		addBounded(new SGLabel(this, "Label (left, bottom)", normalStyles, SGLabelMode.SIMPLE, HAlignMode.LEFT,
-				VAlignMode.BOTTOM).setBackground(bgColor), 20, 170);
+		addBounded(new SGLabel(this, "Label (left, bottom)", normalStyles, SGLabelMode.SIMPLE,
+				HAlignMode.LEFT, VAlignMode.BOTTOM).setBackground(bgColor), 20, 170);
 		
 		addNode(new CrossMark(this), 340, 170);
 		addBounded(new SGLabel(this, "Label (center, bottom)", normalStyles, SGLabelMode.SIMPLE,
 				HAlignMode.CENTER, VAlignMode.BOTTOM).setBackground(bgColor), 340, 170);
 		
 		addNode(new CrossMark(this), 660, 170);
-		addBounded(new SGLabel(this, "Label (right, bottom)", normalStyles, SGLabelMode.SIMPLE, HAlignMode.RIGHT,
-				VAlignMode.BOTTOM).setBackground(bgColor), 660, 170);
+		addBounded(new SGLabel(this, "Label (right, bottom)", normalStyles, SGLabelMode.SIMPLE,
+				HAlignMode.RIGHT, VAlignMode.BOTTOM).setBackground(bgColor), 660, 170);
 		
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		
@@ -210,44 +214,44 @@ public class BoundedLabelDemo extends SGWindow {
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		
 		addNode(new CrossMark(this), 20, 430);
-		addBounded(new SGLabel(this, "Label (left, top)", normalStyles, SGLabelMode.BOX, HAlignMode.LEFT,
-				VAlignMode.TOP, 200, 40).setBackground(bgColor), 20, 430);
+		addBounded(new SGLabel(this, "Label (left, top)", normalStyles, SGLabelMode.BOX,
+				HAlignMode.LEFT, VAlignMode.TOP, 200, 40).setBackground(bgColor), 20, 430);
 		
 		addNode(new CrossMark(this), 240, 430);
-		addBounded(new SGLabel(this, "Label (center, top)", normalStyles, SGLabelMode.BOX, HAlignMode.CENTER,
-				VAlignMode.TOP, 200, 40).setBackground(bgColor), 240, 430);
+		addBounded(new SGLabel(this, "Label (center, top)", normalStyles, SGLabelMode.BOX,
+				HAlignMode.CENTER, VAlignMode.TOP, 200, 40).setBackground(bgColor), 240, 430);
 		
 		addNode(new CrossMark(this), 460, 430);
-		addBounded(new SGLabel(this, "Label (right, top)", normalStyles, SGLabelMode.BOX, HAlignMode.RIGHT,
-				VAlignMode.TOP, 200, 40).setBackground(bgColor), 460, 430);
+		addBounded(new SGLabel(this, "Label (right, top)", normalStyles, SGLabelMode.BOX,
+				HAlignMode.RIGHT, VAlignMode.TOP, 200, 40).setBackground(bgColor), 460, 430);
 		
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		
 		addNode(new CrossMark(this), 20, 480);
-		addBounded(new SGLabel(this, "Label (left, center)", normalStyles, SGLabelMode.BOX, HAlignMode.LEFT,
-				VAlignMode.CENTER, 200, 40).setBackground(bgColor), 20, 480);
+		addBounded(new SGLabel(this, "Label (left, center)", normalStyles, SGLabelMode.BOX,
+				HAlignMode.LEFT, VAlignMode.CENTER, 200, 40).setBackground(bgColor), 20, 480);
 		
 		addNode(new CrossMark(this), 240, 480);
-		addBounded(new SGLabel(this, "Label (center, center)", normalStyles, SGLabelMode.BOX, HAlignMode.CENTER,
-				VAlignMode.CENTER, 200, 40).setBackground(bgColor), 240, 480);
+		addBounded(new SGLabel(this, "Label (center, center)", normalStyles, SGLabelMode.BOX,
+				HAlignMode.CENTER, VAlignMode.CENTER, 200, 40).setBackground(bgColor), 240, 480);
 		
 		addNode(new CrossMark(this), 460, 480);
-		addBounded(new SGLabel(this, "Label (right, center)", normalStyles, SGLabelMode.BOX, HAlignMode.RIGHT,
-				VAlignMode.CENTER, 200, 40).setBackground(bgColor), 460, 480);
+		addBounded(new SGLabel(this, "Label (right, center)", normalStyles, SGLabelMode.BOX,
+				HAlignMode.RIGHT, VAlignMode.CENTER, 200, 40).setBackground(bgColor), 460, 480);
 		
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		
 		addNode(new CrossMark(this), 20, 530);
-		addBounded(new SGLabel(this, "Label (left, bottom)", normalStyles, SGLabelMode.BOX, HAlignMode.LEFT,
-				VAlignMode.BOTTOM, 200, 40).setBackground(bgColor), 20, 530);
+		addBounded(new SGLabel(this, "Label (left, bottom)", normalStyles, SGLabelMode.BOX,
+				HAlignMode.LEFT, VAlignMode.BOTTOM, 200, 40).setBackground(bgColor), 20, 530);
 		
 		addNode(new CrossMark(this), 240, 530);
-		addBounded(new SGLabel(this, "Label (center, bottom)", normalStyles, SGLabelMode.BOX, HAlignMode.CENTER,
-				VAlignMode.BOTTOM, 200, 40).setBackground(bgColor), 240, 530);
+		addBounded(new SGLabel(this, "Label (center, bottom)", normalStyles, SGLabelMode.BOX,
+				HAlignMode.CENTER, VAlignMode.BOTTOM, 200, 40).setBackground(bgColor), 240, 530);
 		
 		addNode(new CrossMark(this), 460, 530);
-		addBounded(new SGLabel(this, "Label (right, bottom)", normalStyles, SGLabelMode.BOX, HAlignMode.RIGHT,
-				VAlignMode.BOTTOM, 200, 40).setBackground(bgColor), 460, 530);
+		addBounded(new SGLabel(this, "Label (right, bottom)", normalStyles, SGLabelMode.BOX,
+				HAlignMode.RIGHT, VAlignMode.BOTTOM, 200, 40).setBackground(bgColor), 460, 530);
 		
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		
@@ -260,8 +264,10 @@ public class BoundedLabelDemo extends SGWindow {
 				HAlignMode.LEFT, VAlignMode.BOTTOM, 200, 40).setBackground(bgColor), 120, 630);
 		
 		addNode(new CrossMark(this), 340, 630);
-		addBounded(new SGLabel(this, "Label (center, bottom)", normalStyles, SGLabelMode.BOX_CENTER,
-				HAlignMode.CENTER, VAlignMode.BOTTOM, 200, 40).setBackground(bgColor), 340, 630);
+		addBounded(
+				new SGLabel(this, "Label (center, bottom)", normalStyles, SGLabelMode.BOX_CENTER,
+						HAlignMode.CENTER, VAlignMode.BOTTOM, 200, 40).setBackground(bgColor), 340,
+				630);
 		
 		addNode(new CrossMark(this), 560, 630);
 		addBounded(new SGLabel(this, "Label (right, bottom)", normalStyles, SGLabelMode.BOX_CENTER,
@@ -282,14 +288,13 @@ public class BoundedLabelDemo extends SGWindow {
 	 */
 	class Outlined extends SGNode {
 		
-		public Outlined(PApplet app, SGNode node) {
+		public Outlined(SGApp app, SGNode node) {
 			super(app);
-			maintainBounds();
 			addNode(node);
 			addModifier(new IModifier() {
 				@Override
 				public void apply(SGNode node) {
-					node.invalidateContentFromUpdate();
+					node.redraw();
 				}
 			});
 		}
@@ -297,7 +302,7 @@ public class BoundedLabelDemo extends SGWindow {
 		/* @see be.multec.sg.d2.SGRect#draw(processing.core.PGraphics) */
 		@Override
 		protected void draw(PGraphics g) {
-			Rectangle bounds = getBounds();
+			Rectangle bounds = getCompositeBounds();
 			// System.out.println("- bounds: " + rectStr(bounds));
 			g.noFill();
 			g.stroke(0xFFBE0000);

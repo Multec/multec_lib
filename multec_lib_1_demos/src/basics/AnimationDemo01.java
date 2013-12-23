@@ -2,12 +2,11 @@ package basics;
 
 import java.awt.Color;
 
-import processing.core.PApplet;
+import be.multec.sg.SGApp;
 import be.multec.sg.SGFigure;
 import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
 import be.multec.sg.d2.SGEllipse;
-import be.multec.sg.d2.SGLabel;
 import be.multec.sg.modifiers.IModifier;
 
 public class AnimationDemo01 extends SGWindow {
@@ -54,7 +53,7 @@ public class AnimationDemo01 extends SGWindow {
 	
 	class Branch extends SGFigure {
 		
-		public Branch(PApplet app, int nBranches, int depth) {
+		public Branch(SGApp app, int nBranches, int depth) {
 			super(app);
 			
 			SGEllipse ce = new SGEllipse(app, diam, diam, fgColor);
