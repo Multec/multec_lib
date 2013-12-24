@@ -1,6 +1,9 @@
 package be.multec.sg;
 
+import java.awt.Color;
 import java.awt.event.KeyEvent;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import processing.core.PApplet;
 import processing.core.PConstants;
@@ -10,6 +13,7 @@ import processing.core.PMatrix2D;
 import processing.core.PMatrix3D;
 import processing.core.PVector;
 import processing.event.MouseEvent;
+import be.multec.sg.modifiers.IModifier;
 
 /**
  * Base class for scene-graph applets. These specialized Processing-applets provide a scene-graph
@@ -46,6 +50,13 @@ public class SGApp extends PApplet {
 	/* False as long as the PApplet.draw() method was not called for the first time. */
 	private boolean setupComplete = false;
 	
+	protected String name;
+	
+	/*
+	 * The background color.
+	 */
+	private Color backgroundColor = null;
+	
 	// *********************************************************************************************
 	// Constructors:
 	// ---------------------------------------------------------------------------------------------
@@ -57,6 +68,8 @@ public class SGApp extends PApplet {
 		// Intialize the stage (the root of the scene-graph):
 		stage = new SGStage(this);
 		// registerMethod("keyEvent", this);
+		
+		name = getClassName();
 	}
 	
 	/**
@@ -68,8 +81,10 @@ public class SGApp extends PApplet {
 		noLoop();
 		unregisterMethod("mouseEvent", this);
 		// unregisterMethod("keyEvent", this);
-		stage.dispose(true);
-		stage = null;
+		if (stage != null) {
+			stage.dispose(true);
+			stage = null;
+		}
 		super.dispose();
 	}
 	
@@ -104,24 +119,96 @@ public class SGApp extends PApplet {
 	 */
 	@Override
 	public void draw() {
-		// System.out.println("\n>> SGApp.draw()");
+		// if (stage.updatePending || stage.redrawPending)
+		// println("\n>> SGApp[" + name + "].draw() - " + stage.updatePending + ", "
+		// + stage.redrawPending);
 		
+		// Complete setup when draw() is called for the first time:
 		if (!setupComplete) {
 			stageMouseMatrix = g.getMatrix();
 			registerMethod("mouseEvent", this);
 			setupComplete = true;
 		}
 		
+		// Flag the mouse vector as dirty when the mouse moved since the previous frame:
 		if (mouseX != pmouseX || mouseY != pmouseY) stageMouseVectorDirty = true;
 		
-		if (stage.updatePending()) {
+		// Apply scheduled updates that are due:
+		if (dueUpdates != null) {
+			// println("# apply scheduled updates");
+			DueUpdate[] updates;
+			synchronized (dueUpdatesLock) {
+				updates = dueUpdates;
+				dueUpdates = null;
+			}
+			for (DueUpdate update : updates)
+				update.apply();
+		}
+		
+		// Trigger update traversal when needed:
+		if (stage.updatePending) {
 			updateActive = true;
 			stage.update_sys();
 			updateActive = false;
 		}
 		
-		if (stage.redrawPending()) {
+		if (stage.redrawPending) {
+			if (backgroundColor != null) background(backgroundColor.getRGB());
 			stage.draw_sys(this.g);
+		}
+		
+		// if (stage.updatePending || stage.redrawPending)
+		// println("<< " + name + ".draw() - " + stage.updatePending + ", " + stage.redrawPending);
+		
+		if (!stage.updatePending && !stage.redrawPending) noLoop();
+		// if (!stage.updatePending && !stage.redrawPending) println("# NOLOOP");
+	}
+	
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	// Redraw scheduling:
+	
+	private Timer scheduledUpdateTimer = new Timer();
+	
+	private Object dueUpdatesLock = new Object();
+	
+	private DueUpdate[] dueUpdates;
+	
+	public void scheduleUpdate(int delay, final SGNode target, final IModifier modifier) {
+		// println(">> SGApp.scheduleUpdate() - target: " + target.name);
+		final DueUpdate dueUpdate = new DueUpdate(target, modifier);
+		TimerTask task = new TimerTask() {
+			@Override
+			public void run() {
+				// println(">> SGApp.scheduleUpdate >> task.run() " + target.name);
+				synchronized (dueUpdatesLock) {
+					if (dueUpdates == null) {
+						dueUpdates = new DueUpdate[] { dueUpdate };
+						stage.invalidateUpdate();
+						loop();
+					}
+					else {
+						DueUpdate[] na = new DueUpdate[dueUpdates.length + 1];
+						System.arraycopy(dueUpdates, 0, na, 0, dueUpdates.length);
+						na[dueUpdates.length] = dueUpdate;
+						dueUpdates = na;
+					}
+				}
+			}
+		};
+		scheduledUpdateTimer.schedule(task, delay);
+	}
+	
+	private class DueUpdate {
+		private SGNode target;
+		private IModifier modifier;
+		
+		public DueUpdate(SGNode target, IModifier modifier) {
+			this.target = target;
+			this.modifier = modifier;
+		}
+		
+		public void apply() {
+			modifier.apply(target);
 		}
 	}
 	
@@ -155,20 +242,18 @@ public class SGApp extends PApplet {
 	public PVector getMouseVector() {
 		boolean trace = false;
 		if (trace) {
-			System.out.println(">> SGApp.getMouseVector() - stageMouseVectorDirty: "
-					+ stageMouseVectorDirty);
+			println(">> SGApp.getMouseVector() - stageMouseVectorDirty: " + stageMouseVectorDirty);
 		}
 		if (stageMouseVectorDirty) {
 			if (trace) {
-				System.out.println(" - stageMouseMatrix:");
+				println(" - stageMouseMatrix:");
 				printMatrix(stageMouseMatrix);
 			}
 			mouseVector.set(mouseX, mouseY);
 			stageMouseMatrix.mult(mouseVector, stageMouseVector);
 			if (trace) {
-				System.out.println(" - mouseVector: " + mouseVector.x + ", " + mouseVector.y);
-				System.out.println(" - stageMouseVector: " + stageMouseVector.x + ", "
-						+ stageMouseVector.y);
+				println(" - mouseVector: " + mouseVector.x + ", " + mouseVector.y);
+				println(" - stageMouseVector: " + stageMouseVector.x + ", " + stageMouseVector.y);
 			}
 			stageMouseVectorDirty = false;
 		}
@@ -340,6 +425,26 @@ public class SGApp extends PApplet {
 		return updateActive;
 	}
 	
+	/**
+	 * TODO: Integrate nicely with Component.setBackground(Color) and PApplet.setBackground(int)
+	 * 
+	 * @return The currently set background color. This might be -1 when it was not set.
+	 */
+	public Color getBackgroundColor() {
+		return backgroundColor;
+	}
+	
+	/**
+	 * Sets the background color of the window.
+	 * 
+	 * @param color the background color to use
+	 */
+	/* @see java.awt.Component#setBackground(java.awt.Color) */
+	public void setBackground(Color color) {
+		backgroundColor = color;
+		redraw();
+	}
+	
 	// *********************************************************************************************
 	// Other methods:
 	// ---------------------------------------------------------------------------------------------
@@ -393,7 +498,7 @@ public class SGApp extends PApplet {
 	// ---------------------------------------------------------------------------------------------
 	
 	public String getClassName() {
-		return getClass().getSimpleName() + "(SGApp)";
+		return getClass().getSimpleName() + "[SGApp]";
 	}
 	
 	protected void printMatrix(PMatrix matrix) {

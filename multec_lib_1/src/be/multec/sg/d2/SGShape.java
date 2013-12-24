@@ -289,7 +289,7 @@ public class SGShape extends SGFigure {
 	@Override
 	protected void updateLocalBounds(Rectangle bounds) {
 		boolean trace = false;
-		if (trace) System.out.println(">> SGShape[" + this.name + "].updateLocalBounds()");
+		if (trace) println(">> SGShape[" + this.name + "].updateLocalBounds()");
 		
 		float[] xxyy = new float[] { Float.MAX_VALUE, Float.MIN_VALUE, Float.MAX_VALUE,
 				Float.MIN_VALUE };
@@ -329,7 +329,7 @@ public class SGShape extends SGFigure {
 	
 	private void updateBounds(PShape shape, float[] xxyy) {
 		boolean trace = false;
-		if (trace) System.out.println(">> SGShape[" + this.name + "].updateBounds()");
+		if (trace) println(">> SGShape[" + this.name + "].updateBounds()");
 		
 		if (shape.getMatrix() != null) { throw new Error(
 				"Transformations in shapes are currently not supported."); }
@@ -337,7 +337,7 @@ public class SGShape extends SGFigure {
 		switch (shape.getFamily()) {
 		
 			case GROUP:
-				if (trace) System.out.println(" # GROUP");
+				if (trace) println(" # GROUP");
 				PShape[] children = shape.getChildren();
 				for (int i = 0; i < children.length; i++) {
 					if (children[i] != null) updateBounds(children[i], xxyy);
@@ -345,24 +345,24 @@ public class SGShape extends SGFigure {
 				break;
 			
 			case PShape.PRIMITIVE:
-				if (trace) System.out.println(" # PRIMITIVE");
+				if (trace) println(" # PRIMITIVE");
 				updatePrimBounds(shape, xxyy);
 				break;
 			
 			case PShape.PATH:
-				if (trace) System.out.println(" # PATH");
+				if (trace) println(" # PATH");
 				int vertexCount = shape.getVertexCount();
 				float hsw = actualStrokeWeight(shape) / 2;
 				
-				if (trace) System.out.println(" - vertexCount: " + vertexCount);
-				if (trace) System.out.println(" - hsw: " + hsw);
+				if (trace) println(" - vertexCount: " + vertexCount);
+				if (trace) println(" - hsw: " + hsw);
 				
 				for (int i = 0; i < vertexCount; i++) {
-					// System.out.println("- i: " + i);
-					// System.out.println("- shape.getVertexX(i): " + shape.getVertexX(i));
-					// System.out.println("- shape.getVertexCode(i): " + shape.getVertexCode(i));
-					// System.out.println("- shape.getStroke(i): " + shape.getStroke(i));
-					// System.out.println("- shape.getStrokeWeight(i): " +
+					// println("- i: " + i);
+					// println("- shape.getVertexX(i): " + shape.getVertexX(i));
+					// println("- shape.getVertexCode(i): " + shape.getVertexCode(i));
+					// println("- shape.getStroke(i): " + shape.getStroke(i));
+					// println("- shape.getStrokeWeight(i): " +
 					// shape.getStrokeWeight(i));
 					updateBounds(shape.getVertexX(i), shape.getVertexY(i), hsw, xxyy);
 				}
@@ -379,11 +379,11 @@ public class SGShape extends SGFigure {
 	
 	private void updatePrimBounds(PShape shape, float[] xxyy) {
 		boolean trace = false;
-		if (trace) System.out.println(">> SGShape[" + this.name + "].updatePrimBounds()");
+		if (trace) println(">> SGShape[" + this.name + "].updatePrimBounds()");
 		
 		float[] pp = shape.getParams();
 		float hsw = actualStrokeWeight(shape) / 2;
-		if (trace) System.out.println(" - hsw: " + hsw);
+		if (trace) println(" - hsw: " + hsw);
 		
 		switch (shape.getKind()) {
 			case POINT:
@@ -508,7 +508,7 @@ public class SGShape extends SGFigure {
 	/* @see be.multec.sg.SGNode#mouseHitTest() */
 	@Override
 	protected boolean contains(float x, float y) {
-		if (traceContains) System.out.println(" >> contains(" + x + ", " + y + ")");
+		if (traceContains) println(" >> contains(" + x + ", " + y + ")");
 		if (position == Position.CORNER) {
 			if (localBoundsChanged) validateLocalBounds();
 			return contains(shape, x + sourceBounds.x, y + sourceBounds.y);
@@ -524,7 +524,7 @@ public class SGShape extends SGFigure {
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
 	private boolean contains(PShape shape, float x, float y) {
-		if (traceContains) System.out.println(" >> contains_sys(" + x + ", " + y + ")");
+		if (traceContains) println(" >> contains_sys(" + x + ", " + y + ")");
 		if (shape.getMatrix() != null) { throw new Error(
 				"Transformations in shapes are currently not supported."); }
 		switch (shape.getFamily()) {
@@ -540,8 +540,7 @@ public class SGShape extends SGFigure {
 				return containsPrim(shape, x, y);
 				
 			case PShape.PATH:
-				if (traceContains)
-					System.out.println("   - PATH contains: " + shape.contains(x, y));
+				if (traceContains) println("   - PATH contains: " + shape.contains(x, y));
 				return shape.contains(x, y);
 				
 			case PShape.GEOMETRY:
@@ -554,7 +553,7 @@ public class SGShape extends SGFigure {
 	}
 	
 	private boolean containsPrim(PShape shape, float x, float y) {
-		if (traceContains) System.out.println("  >> containsPrim(" + x + ", " + y + ")");
+		if (traceContains) println("  >> containsPrim(" + x + ", " + y + ")");
 		float[] pp = shape.getParams();
 		float hsw = actualStrokeWeight(shape) / 2;
 		boolean b0, b1;
@@ -600,10 +599,9 @@ public class SGShape extends SGFigure {
 				float ta = (x - (pp[0] + pp[2] / 2)) / (pp[2] / 2);
 				float tb = (y - (pp[1] + pp[3] / 2)) / (pp[3] / 2);
 				if (traceContains) {
-					System.out.println("   - ELLIPSE, ta: " + ta + ", tb: " + tb);
-					System.out.println("   - pp[0-3]: " + pp[0] + ", " + pp[1] + ", " + pp[2]
-							+ ", " + pp[3]);
-					System.out.println("   - contains: " + (ta * ta + tb * tb <= 1));
+					println("   - ELLIPSE, ta: " + ta + ", tb: " + tb);
+					println("   - pp[0-3]: " + pp[0] + ", " + pp[1] + ", " + pp[2] + ", " + pp[3]);
+					println("   - contains: " + (ta * ta + tb * tb <= 1));
 				}
 				return ta * ta + tb * tb <= 1;
 				

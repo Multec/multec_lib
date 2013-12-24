@@ -40,7 +40,7 @@ import processing.core.PConstants;
  *   
  *   @Override
  *   public void setupSG() {
- *     addChild(new SGLabel(this, "Hello world"), 50, 70);
+ *     addNode(new SGLabel(this, "Hello world"), 50, 70);
  *   }
  * }
  * }
@@ -94,11 +94,6 @@ public class SGWindow extends SGApp {
 	private int stageY = 0;
 	
 	private boolean resizable = false;
-	
-	/*
-	 * The background color.
-	 */
-	private Color backgroundColor = null;
 	
 	private boolean undecorated = false;
 	
@@ -799,13 +794,6 @@ public class SGWindow extends SGApp {
 		super.draw();
 	}
 	
-	/**
-	 * Called by the Processing event system right before draw is called.
-	 */
-	public void pre() {
-		background(backgroundColor.getRGB(), backgroundColor.getAlpha());
-	}
-	
 	// ---------------------------------------------------------------------------------------------
 	// Key event handlers:
 	
@@ -841,32 +829,6 @@ public class SGWindow extends SGApp {
 	/** @return The underlying Java AWT Frame object. */
 	public Frame getFrame() {
 		return frame;
-	}
-	
-	/**
-	 * TODO: Integrate nicely with Component.setBackground(Color) and PApplet.setBackground(int)
-	 * 
-	 * @return The currently set background color. This might be -1 when it was not set.
-	 */
-	public Color getBackgroundColor() {
-		return backgroundColor;
-	}
-	
-	/**
-	 * Sets the background color of the window.
-	 * 
-	 * @param color the background color to use
-	 */
-	/* @see java.awt.Component#setBackground(java.awt.Color) */
-	public void setBackground(Color color) {
-		backgroundColor = color;
-		if (color != null) {
-			registerMethod("pre", this);
-		}
-		else {
-			unregisterMethod("pre", this);
-		}
-		redraw();
 	}
 	
 	/**

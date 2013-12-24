@@ -119,6 +119,20 @@ public class SGRect extends SGFigure {
 	}
 	
 	/**
+	 * @return the rectWidth
+	 */
+	public float getRectWidth() {
+		return rectWidth;
+	}
+
+	/**
+	 * @return the rectHeight
+	 */
+	public float getRectHeight() {
+		return rectHeight;
+	}
+
+	/**
 	 * Sets the size of the rectangle.
 	 * 
 	 * @param width
@@ -173,7 +187,7 @@ public class SGRect extends SGFigure {
 	/* @see be.multec.sg.d2.SG2DNode#draw(processing.core.PGraphics) */
 	@Override
 	protected void draw(PGraphics g) {
-		// System.out.println(">> SGRect[" + this + "].draw()");
+		// println(">> SGRect[" + this + "].draw()");
 		g.rectMode(CORNER);
 		g.rect(0, 0, rectWidth, rectHeight);
 	}

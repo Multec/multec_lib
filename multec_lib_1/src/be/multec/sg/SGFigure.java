@@ -114,7 +114,7 @@ abstract public class SGFigure extends SGNode {
 		if (filled && (fillColor == color || fillColor.equals(color))) return;
 		filled = true;
 		fillColor = color;
-		redraw();
+		redraw("SGFigure.fill()");
 	}
 	
 	public void fill(int r, int g, int b) {
@@ -234,7 +234,7 @@ abstract public class SGFigure extends SGNode {
 	/* @see be.multec.sg.SGNode#draw_sys(processing.core.PGraphics) */
 	@Override
 	protected void draw_sys(PGraphics g) {
-		// System.out.println(">> SG2DFigure.draw_sys() - this: " + this);
+		// println(">> SG2DFigure.draw_sys() - this: " + this);
 		
 		if (filled) g.fill(fillColor.getRGB(), fillColor.getAlpha());
 		else g.noFill();
