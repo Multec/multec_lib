@@ -6,11 +6,11 @@ import java.awt.Rectangle;
 import processing.core.PConstants;
 import processing.core.PFont;
 import processing.core.PGraphics;
+import be.multec.languages.IMLStringUpdateHandler;
+import be.multec.languages.MLString;
 import be.multec.sg.SGApp;
 import be.multec.sg.SGNode;
 import be.multec.sg.styles.ILabelStyles;
-import be.multec.sg.utils.IMLStringUpdateHandler;
-import be.multec.sg.utils.MLString;
 
 /**
  * Draws a text-label.

@@ -1,4 +1,5 @@
-package be.multec.sg.utils;
+package be.multec.languages;
+
 
 /**
  * A handler of MLString update events.

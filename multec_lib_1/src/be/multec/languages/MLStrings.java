@@ -1,4 +1,4 @@
-package be.multec.sg.utils;
+package be.multec.languages;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;

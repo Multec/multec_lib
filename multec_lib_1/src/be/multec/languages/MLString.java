@@ -1,7 +1,8 @@
-package be.multec.sg.utils;
+package be.multec.languages;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.CopyOnWriteArraySet;
+
 
 /**
  * Represents a multi-lingual string. The actual string depends on the currently set language in the

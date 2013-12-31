@@ -1,4 +1,4 @@
-package be.multec.sg.utils;
+package be.multec.languages;
 
 /**
  * @author Wouter Van den Broeck
