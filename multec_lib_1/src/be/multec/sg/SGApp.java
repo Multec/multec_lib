@@ -509,7 +509,7 @@ public class SGApp extends PApplet {
 	/* @see java.awt.Component#setBackground(java.awt.Color) */
 	public void setBackground(Color color) {
 		backgroundColor = color;
-		redraw();
+		stage.redraw("SGApp.setBackground()");
 	}
 	
 	// *********************************************************************************************
