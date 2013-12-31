@@ -313,18 +313,34 @@ public class SGApp extends PApplet {
 				// TODO: dispatch exit event
 				break;
 			case MouseEvent.PRESS:
+				// Manually set the mouseX & mouseY because this is not yet done when the mouse
+				// touches the window while it was out of system focus (on Mac OS X at least).
+				mouseX = x;
+				mouseY = y;
 				stage.mousePressed_sys(mouseSysEvent);
 				break;
 			case MouseEvent.RELEASE:
+				// Manually set the mouseX & mouseY because this is not yet done when the mouse
+				// touches the window while it was out of system focus (on Mac OS X at least).
+				mouseX = x;
+				mouseY = y;
 				stage.mouseReleased_sys(mouseSysEvent);
 				break;
 			case MouseEvent.CLICK:
+				// Manually set the mouseX & mouseY because this is not yet done when the mouse
+				// touches the window while it was out of system focus (on Mac OS X at least).
+				mouseX = x;
+				mouseY = y;
 				stage.mouseClicked_sys(mouseSysEvent);
 				break;
 			case MouseEvent.MOVE:
+				// println(">> SGApp > MOVE - x, y: (" + x + ", " + y + "),  mouseX/Y: (" + mouseX
+				// + ", " + mouseY + ")");
 				stage.mouseMoved_sys(mouseSysEvent, false);
 				break;
 			case MouseEvent.DRAG:
+				// println(">> SGApp > DRAG - x, y: (" + x + ", " + y + "),  mouseX/Y: (" + mouseX
+				// + ", " + mouseY + ")");
 				stage.mouseMoved_sys(mouseSysEvent, true);
 				break;
 		}
