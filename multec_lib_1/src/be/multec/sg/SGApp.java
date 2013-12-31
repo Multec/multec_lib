@@ -2,6 +2,7 @@ package be.multec.sg;
 
 import java.awt.Color;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -56,6 +57,9 @@ public class SGApp extends PApplet {
 	
 	/* True when the update traversal is active. */
 	boolean updateActive = false;
+	
+	/* True when the redraw traversal is active. */
+	boolean drawActive = false;
 	
 	/* False as long as the PApplet.draw() method was not called for the first time. */
 	private boolean setupComplete = false;
@@ -120,6 +124,9 @@ public class SGApp extends PApplet {
 		setupSG();
 	}
 	
+	/** Trace the draw traversal when true. */
+	public boolean traceDrawTrav = false;
+	
 	/**
 	 * This method should be called by overriding methods.
 	 * 
@@ -154,22 +161,57 @@ public class SGApp extends PApplet {
 		}
 		
 		// Trigger update traversal when needed:
+		updateActive = true;
 		if (stage.updatePending) {
-			updateActive = true;
 			stage.update_sys();
-			updateActive = false;
 		}
+		updateActive = false;
 		
+		// draw traversal:
+		if (drawActive) throw new Error("The redraw is already active [in " + name + "].");
+		drawActive = true;
+		if (DEBUG_MODE) stage.checkTree();
+		if (traceDrawTrav) {
+			println("+ DRAW - START TRAVERSAL for [" + name + "]");
+			// stage.printTree();
+		}
 		if (stage.redrawPending) {
 			if (backgroundColor != null) background(backgroundColor.getRGB());
 			stage.draw_sys(this.g);
 		}
-		
-		// if (stage.updatePending || stage.redrawPending)
-		// println("<< " + name + ".draw() - " + stage.updatePending + ", " + stage.redrawPending);
+		drawActive = false;
+		if (traceDrawTrav) println("+ DRAW - END TRAVERSAL for [" + name + "]");
+		applyEnqueuedRedraws();
 		
 		if (!stage.updatePending && !stage.redrawPending) noLoop();
-		// if (!stage.updatePending && !stage.redrawPending) println("# NOLOOP");
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	// Functionality for enqueueing asynchronous redraw requests while the redraw traversal is
+	// active.
+	
+	private Object redrawQueueLock = new Object();
+	private ArrayList<SGNode> redrawQueue = new ArrayList<SGNode>();
+	private ArrayList<SGNode> redrawQueueAlt = new ArrayList<SGNode>();
+	
+	public void enqueueRedraw(SGNode node) {
+		synchronized (redrawQueueLock) {
+			redrawQueue.add(node);
+		}
+	}
+	
+	public void applyEnqueuedRedraws() {
+		synchronized (redrawQueueLock) {
+			if (redrawQueue.size() == 0) return;
+			if (SGNode.traceRedraw)
+				println("* REDRAW - applying enqueued redraws for [" + name + "]");
+			ArrayList<SGNode> queue = redrawQueue;
+			redrawQueue = redrawQueueAlt;
+			for (SGNode node : queue)
+				node.redraw();
+			queue.clear();
+			redrawQueueAlt = queue;
+		}
 	}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
