@@ -236,6 +236,8 @@ abstract public class SGFigure extends SGNode {
 	protected void draw_sys(PGraphics g) {
 		// println(">> SG2DFigure.draw_sys() - this: " + this);
 		
+		g.pushStyle();
+		
 		if (filled) g.fill(fillColor.getRGB(), fillColor.getAlpha());
 		else g.noFill();
 		
@@ -248,6 +250,8 @@ abstract public class SGFigure extends SGNode {
 		g.blendMode(blendMode);
 		
 		super.draw_sys(g);
+
+		g.popStyle();
 	}
 	
 }
