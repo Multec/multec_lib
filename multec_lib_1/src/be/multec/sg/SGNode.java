@@ -81,6 +81,22 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (name == null) name = makeName(nodeCounter);
 	}
 	
+	/**
+	 * Basic constructor.
+	 * 
+	 * @param app The scene-graph application object.
+	 * @param explicitWidth The explicit width of this node.
+	 * @param explicitHeight The explicit height of this node.
+	 */
+	public SGNode(SGApp app, float explicitWidth, float explicitHeight) {
+		super(app);
+		nodeCounter++;
+		this.app = app;
+		this.explicitWidth = explicitWidth;
+		this.explicitHeight = explicitHeight;
+		if (name == null) name = makeName(nodeCounter);
+	}
+	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
 	/** Override to give the objects a custom name. */
@@ -152,10 +168,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// Explicit width & height:
 	// ---------------------------------------------------------------------------------------------
 	
-	private float explicitWidth;
-	private boolean explicitWidthSet = false;
-	private float explicitHeight;
-	private boolean explicitHeightSet = false;
+	protected float explicitWidth = 0;
+	protected float explicitHeight = 0;
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
@@ -172,7 +186,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	public void setExplicitWidth(float explicitWidth) {
 		if (this.explicitWidth == explicitWidth) return;
 		this.explicitWidth = explicitWidth;
-		explicitWidthSet = explicitWidth > 0;
 		invalidateLocalBounds();
 	}
 	
@@ -180,7 +193,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @return True if the width was explicitly set.
 	 */
 	public boolean explicitWidthSet() {
-		return explicitWidthSet;
+		return explicitWidth != 0;
 	}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -198,7 +211,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	public void setExplicitHeight(float explicitHeight) {
 		if (this.explicitHeight == explicitHeight) return;
 		this.explicitHeight = explicitHeight;
-		explicitHeightSet = explicitHeight > 0;
 		invalidateLocalBounds();
 	}
 	
@@ -206,7 +218,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @return True if the height was explicitly set.
 	 */
 	public boolean explicitHeightSet() {
-		return explicitHeightSet;
+		return explicitHeight != 0;
 	}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -218,10 +230,20 @@ public class SGNode extends SGNodeBase implements PConstants {
 	public void setExplicitSize(float explicitWidth, float explicitHeight) {
 		if (this.explicitWidth == explicitWidth && this.explicitHeight == explicitHeight) return;
 		this.explicitWidth = explicitWidth;
-		explicitWidthSet = explicitWidth > 0;
 		this.explicitHeight = explicitHeight;
-		explicitHeightSet = explicitHeight > 0;
 		invalidateLocalBounds();
+	}
+	
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	public float width() {
+		if (explicitWidth > 0) return explicitWidth;
+		else return getLocalBounds().width;
+	}
+	
+	public float height() {
+		if (explicitHeight > 0) return explicitHeight;
+		else return getLocalBounds().height;
 	}
 	
 	// *********************************************************************************************
@@ -1001,7 +1023,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @param localBounds The rectangle in which to set the local bounds.
 	 */
 	protected void updateLocalBounds(Rectangle localBounds) {
-		if (explicitWidthSet && explicitHeightSet) {
+		if (explicitWidth != 0 && explicitHeight != 0) {
 			localBounds.setBounds(0, 0, ceil(explicitWidth), ceil(explicitHeight));
 		}
 		else if (!hasChildren)
@@ -1160,15 +1182,15 @@ public class SGNode extends SGNodeBase implements PConstants {
 					float y3 = localTMatrix.multY(b.x + b.width, b.y + b.height);
 					float x4 = localTMatrix.multX(b.x, b.y + b.height);
 					float y4 = localTMatrix.multY(b.x, b.y + b.height);
-					b.x = (int) Math.floor(Math.min(Math.min(x1, x2), Math.min(x3, x4)));
-					b.y = (int) Math.floor(Math.min(Math.min(y1, y2), Math.min(y3, y4)));
-					b.width = (int) Math.ceil(Math.max(Math.max(x1, x2), Math.max(x3, x4))) - b.x;
-					b.height = (int) Math.ceil(Math.max(Math.max(y1, y2), Math.max(y3, y4))) - b.y;
+					b.x = floor(Math.min(Math.min(x1, x2), Math.min(x3, x4)));
+					b.y = floor(Math.min(Math.min(y1, y2), Math.min(y3, y4)));
+					b.width = ceil(Math.max(Math.max(x1, x2), Math.max(x3, x4))) - b.x;
+					b.height = ceil(Math.max(Math.max(y1, y2), Math.max(y3, y4))) - b.y;
 				}
 				else if (applyTranslate) {
 					if (trace) println(" - applyTranslate only");
-					b.x = (int) Math.floor(b.x + x);
-					b.y = (int) Math.floor(b.y + y);
+					b.x = floor(b.x + x);
+					b.y = floor(b.y + y);
 				}
 			}
 			compositeBoundsDirty = false;
@@ -1353,7 +1375,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	public boolean drawBounds = true;
+	public boolean drawBounds = false;
 	
 	/**
 	 * A system function that applies the transformations, calls the draw() method for this node and
@@ -1612,8 +1634,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// Contains functionality:
 	// ---------------------------------------------------------------------------------------------
 	
-	public boolean checkContainsInChildren = false;
-	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
 	/**
@@ -1636,16 +1656,9 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	private boolean contains_sys(float x, float y) {
 		if (!visible) return false;
-		Rectangle bounds = getLocalBounds();
-		if ((x >= bounds.x) && (y >= bounds.y) && (x < bounds.x + bounds.width)
-				&& (y < bounds.y + bounds.height) && contains(x, y)) return true;
-		if (checkContainsInChildren) {
-			for (int i = children.size() - 1; i >= 0; i--) {
-				SGNode child = children.get(i);
-				if (child.contains_sys(child.getMousePosition())) return true;
-			}
-		}
-		return false;
+		Rectangle bounds = getLocalCompositeBounds();
+		return (getLocalBounds().contains(x, y) && contains(x, y))
+				|| getLocalCompositeBounds().contains(x, y);
 	}
 	
 	/**
@@ -1656,6 +1669,16 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	private boolean contains_sys(PVector point) {
 		return contains_sys(point.x, point.y);
+	}
+	
+	/**
+	 * @return True when the mouse is contained by the graphical content of this node.
+	 * 
+	 * @see SGNode#enableMouseEventMethods()
+	 * @see SGNode#addMouseEventHandler(SGMouseEventHandler)
+	 */
+	private boolean containsMouse() {
+		return contains_sys(getMousePosition());
 	}
 	
 	// *********************************************************************************************
@@ -1794,22 +1817,26 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// ---------------------------------------------------------------------------------------------
 	// system mouse methods:
 	
+	static boolean traceMClicked = false;
+	
 	/* System method. */
 	void mouseClicked_sys(MouseSystemEvent msEvent) {
 		boolean trace = false;
-		if (trace) println(">> SGNode[" + this + "].mouseClicked_sys()");
-		if (!visible) return;
-		if (dispatchMouseEvents) {
-			PVector mousePos = getMousePosition();
-			if (trace) println(" - mousePos: " + mousePos.x + ", " + mousePos.y);
-			if (contains_sys(mousePos)) {
-				if (trace) println(" - contained!");
-				msEvent.consumed = true;
-				dispatchMouseClicked(mousePos);
-			}
+		String tm = null;
+		if (traceMClicked) {
+			PVector mp = getMousePosition();
+			tm = ">> mouseClicked_sys() on " + this + " (" + mp.x + ", " + mp.y + ")";
+			if (!visible) println(tm + " - invisible [" + this + "]");
 		}
-		else if (forwardSysMouseEvents) {
-			if (trace) println(" - forwardSysMouseEvents!");
+		if (!visible) return;
+		if (dispatchMouseEvents && containsMouse()) {
+			if (traceMClicked) println(tm + " - dispatched [" + this + "]");
+			msEvent.consumed = true;
+			dispatchMouseClicked(getMousePosition());
+			return;
+		}
+		if (forwardSysMouseEvents && containsMouse()) {
+			if (traceMClicked) println(tm + " - forwarded [" + this + "]");
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
@@ -1822,15 +1849,13 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/* System method. */
 	void mousePressed_sys(MouseSystemEvent msEvent) {
 		if (!visible) return;
-		if (dispatchMouseEvents) {
-			PVector mousePos = getMousePosition();
-			if (contains_sys(mousePos)) {
-				mouseWasPressed = true;
-				msEvent.consumed = true;
-				dispatchMousePressed(mousePos);
-			}
+		if (dispatchMouseEvents && containsMouse()) {
+			mouseWasPressed = true;
+			msEvent.consumed = true;
+			dispatchMousePressed(getMousePosition());
+			return;
 		}
-		else if (forwardSysMouseEvents) {
+		if (forwardSysMouseEvents && containsMouse()) {
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
@@ -1843,15 +1868,13 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/* System method. */
 	void mouseReleased_sys(MouseSystemEvent msEvent) {
 		if (!visible) return;
-		if (dispatchMouseEvents) {
-			PVector mousePos = getMousePosition();
-			if (contains_sys(mousePos)) {
-				mouseWasPressed = false;
-				msEvent.consumed = true;
-				dispatchMouseReleased(mousePos);
-			}
+		if (dispatchMouseEvents && containsMouse()) {
+			mouseWasPressed = false;
+			msEvent.consumed = true;
+			dispatchMouseReleased(getMousePosition());
+			return;
 		}
-		else if (forwardSysMouseEvents) {
+		if (forwardSysMouseEvents && containsMouse()) {
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
