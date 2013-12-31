@@ -209,14 +209,14 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/**
 	 * @return the explicitly set width
 	 */
-	public float getExplicitWidth() {
+	public float explicitWidth() {
 		return explicitWidth;
 	}
 	
 	/**
 	 * @param explicitWidth the explicit width to set
 	 */
-	public void setExplicitWidth(float explicitWidth) {
+	public void explicitWidth(float explicitWidth) {
 		if (this.explicitWidth == explicitWidth) return;
 		this.explicitWidth = explicitWidth;
 		invalidateLocalBounds();
@@ -234,14 +234,14 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/**
 	 * @return the explicitly set height
 	 */
-	public float getExplicitHeight() {
+	public float explicitHeight() {
 		return explicitHeight;
 	}
 	
 	/**
 	 * @param explicitHeight the explicit height to set
 	 */
-	public void setExplicitHeight(float explicitHeight) {
+	public void explicitHeight(float explicitHeight) {
 		if (this.explicitHeight == explicitHeight) return;
 		this.explicitHeight = explicitHeight;
 		invalidateLocalBounds();
@@ -260,7 +260,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @param explicitWidth the explicit width to set
 	 * @param explicitHeight the explicit height to set
 	 */
-	public void setExplicitSize(float explicitWidth, float explicitHeight) {
+	public void size(float explicitWidth, float explicitHeight) {
 		if (this.explicitWidth == explicitWidth && this.explicitHeight == explicitHeight) return;
 		this.explicitWidth = explicitWidth;
 		this.explicitHeight = explicitHeight;
