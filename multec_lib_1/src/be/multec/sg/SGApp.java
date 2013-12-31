@@ -41,6 +41,11 @@ public class SGApp extends PApplet {
 	// Attributes:
 	// ---------------------------------------------------------------------------------------------
 	
+	/** The name of this SGApp. Mainly for debugging purposes. */
+	protected String name;
+	
+	// ---------------------------------------------------------------------------------------------
+	
 	/* The root-node of the scene-graph. */
 	private SGStage stage;
 	
@@ -49,8 +54,6 @@ public class SGApp extends PApplet {
 	
 	/* False as long as the PApplet.draw() method was not called for the first time. */
 	private boolean setupComplete = false;
-	
-	protected String name;
 	
 	/*
 	 * The background color.
@@ -292,16 +295,16 @@ public class SGApp extends PApplet {
 	 * 
 	 * @param event
 	 */
-	public void mouseEvent(MouseEvent processingEvent) {
-		int x = processingEvent.getX();
-		int y = processingEvent.getY();
-		int action = processingEvent.getAction();
+	public void mouseEvent(MouseEvent pEvent) {
+		int x = pEvent.getX();
+		int y = pEvent.getY();
+		int action = pEvent.getAction();
 		
 		if (!stage.wantsSysMouseEvents) return;
 		
 		if ((x != mouseVector.x) || (y != mouseVector.y)) stageMouseVectorDirty = true;
 		
-		mouseSysEvent.reset(processingEvent);
+		mouseSysEvent.reset(pEvent);
 		
 		switch (action) {
 			case MouseEvent.ENTER:
@@ -520,6 +523,15 @@ public class SGApp extends PApplet {
 	protected void printMatrix(PMatrix matrix) {
 		if (matrix.getClass() == PMatrix2D.class) ((PMatrix2D) matrix).print();
 		else if (matrix.getClass() == PMatrix3D.class) ((PMatrix3D) matrix).print();
+	}
+	
+	// *********************************************************************************************
+	// Other methods:
+	// ---------------------------------------------------------------------------------------------
+	
+	@Override
+	public String toString() {
+		return name;
 	}
 	
 }
