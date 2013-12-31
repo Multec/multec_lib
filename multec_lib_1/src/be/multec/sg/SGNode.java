@@ -18,6 +18,8 @@ import be.multec.sg.modifiers.IModifier;
 /**
  * Base class for nodes in a scene-graph. Each node can act as a container of child-nodes.
  * 
+ * TODO: Treat move/drag event separately.
+ * 
  * @author Wouter Van den Broeck
  */
 public class SGNode extends SGNodeBase implements PConstants {
@@ -1461,6 +1463,14 @@ public class SGNode extends SGNodeBase implements PConstants {
 			applyTransformation(g);
 			draw(g); // call the draw() method on this node:
 			
+			if (drawBounds) {
+				Rectangle bounds = getLocalCompositeBounds();
+				g.noFill();
+				g.stroke(0x99990000);
+				g.strokeWeight(1);
+				g.rect(bounds.x, bounds.y, bounds.width, bounds.height);
+			}
+			
 			// forward the draw_sys() call to each child:
 			if (hasChildren) {
 				for (SGNode child : children) {
@@ -1468,14 +1478,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 				}
 			}
 		}
-		
-		// if (drawBounds) {
-		// g.stroke(0x88FF0000);
-		// g.strokeWeight(1);
-		// g.noFill();
-		// g.rect(localCompositeBounds.x, localCompositeBounds.y, localCompositeBounds.width,
-		// localCompositeBounds.height);
-		// }
 		
 		if (applyTransformation) g.popMatrix();
 		inverseTMatrixDirty = false;
