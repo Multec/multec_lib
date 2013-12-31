@@ -883,13 +883,14 @@ public class SGNode extends SGNodeBase implements PConstants {
 	public SGNode addNode(SGNode child) {
 		// println(">> SGNode[" + this.name + "].addNode()");
 		if (child.is3D) throw new Error("3D content is currently not supported.");
-		
-		if (child.addedToSG) {
+		if (child == this) { throw new Error("Trying to add a node to itself for node: " + this); }
+		if (child.addedToSG)
 			throw new Error("SGNode.addNode(SGNode) was" + " called (on " + this.toString()
 					+ ") with a child that" + " is already part of the scene-graph - container: .");
-			
-		}
-		else if (children.add(child)) {
+		
+		if (children.contains(child)) { throw new Error("The child (" + child
+				+ ") is already in the children list (of " + this + ") [in SGNode.addNode]"); }
+		if (children.add(child)) {
 			hasChildren = true;
 			child.parent = this;
 			if (addedToSG) child.onAddedToSG();
@@ -1400,6 +1401,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			if (trace) println("# REDRAW " + app.name + " in " + name + " from " + caller);
 			app.loop();
 		}
+		if (SGApp.DEBUG_MODE) checkTree();
 	}
 	
 	final public void redraw() {
@@ -2229,6 +2231,66 @@ public class SGNode extends SGNodeBase implements PConstants {
 	@Override
 	public String toString() {
 		return name;
+	}
+	
+	// *********************************************************************************************
+	// Testing:
+	// ---------------------------------------------------------------------------------------------
+	
+	private class CheckTreeState {
+		public boolean stagePendingError = false;
+		public boolean childEqParentError = false;
+	}
+	
+	public void checkTree() {
+		boolean stageRedrawPending = app.getStage().redrawPending;
+		CheckTreeState state = new CheckTreeState();
+		if (!stageRedrawPending) checkTreeRec(app.getStage(), state);
+		if (state.stagePendingError) {
+			printTree();
+			throw new Error("Found error in SGNode.checkTree. See System.err for more details. ["
+					+ this + "]");
+		}
+	}
+	
+	public void checkTreeRec(SGNode node, CheckTreeState state) {
+		if (node.redrawPending) {
+			if (!state.stagePendingError) {
+				System.err.println("The stage redraw is not pending,"
+						+ " but the redraw of these nodes is pending: [" + this + "]");
+				state.stagePendingError = true;
+			}
+			System.err.println(" - " + node.name);
+		}
+		for (SGNode child : node.children) {
+			if (child == node) {
+				state.childEqParentError = true;
+				printTree();
+				throw new Error("Unexpected, child == node - node: " + node + ", child: " + child);
+			}
+			checkTreeRec(child, state);
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	public void printTree() {
+		println("\n# TREE");
+		printTree(app.getStage(), "");
+	}
+	
+	private void printTree(SGNode node, String indent) {
+		String line = indent + "- " + node;
+		if (node.redrawPending) line += " - redrawPending";
+		println(line);
+		indent += "  ";
+		for (SGNode child : node.children) {
+			if (child == node) {
+				println(indent + "! " + child + " - SAME AS PARENT");
+				return;
+			}
+			printTree(child, indent);
+		}
 	}
 	
 }

@@ -41,6 +41,11 @@ public class SGApp extends PApplet {
 	// Attributes:
 	// ---------------------------------------------------------------------------------------------
 	
+	/** Enables the debug mode. Additional checks are performed when this mode is enabled. */
+	public static boolean DEBUG_MODE = false;
+	
+	// ---------------------------------------------------------------------------------------------
+	
 	/** The name of this SGApp. Mainly for debugging purposes. */
 	protected String name;
 	
