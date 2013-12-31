@@ -78,7 +78,21 @@ public class SGNode extends SGNodeBase implements PConstants {
 		super(app);
 		nodeCounter++;
 		this.app = app;
-		if (name == null) name = makeName(nodeCounter);
+		name = makeName(nodeCounter);
+	}
+	
+	/**
+	 * Basic constructor.
+	 * 
+	 * @param app The scene-graph application object.
+	 * @param name The name for this node.
+	 */
+	public SGNode(SGApp app, String name) {
+		super(app);
+		nodeCounter++;
+		this.app = app;
+		if (name == null) this.name = makeName(nodeCounter);
+		else this.name = name;
 	}
 	
 	/**
@@ -89,6 +103,23 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @param explicitHeight The explicit height of this node.
 	 */
 	public SGNode(SGApp app, float explicitWidth, float explicitHeight) {
+		super(app);
+		nodeCounter++;
+		this.app = app;
+		this.explicitWidth = explicitWidth;
+		this.explicitHeight = explicitHeight;
+		if (name == null) name = makeName(nodeCounter);
+	}
+	
+	/**
+	 * Basic constructor.
+	 * 
+	 * @param app The scene-graph application object.
+	 * @param explicitWidth The explicit width of this node.
+	 * @param explicitHeight The explicit height of this node.
+	 * @param name The name for this node.
+	 */
+	public SGNode(SGApp app, float explicitWidth, float explicitHeight, String name) {
 		super(app);
 		nodeCounter++;
 		this.app = app;
