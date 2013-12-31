@@ -343,7 +343,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	public void setVisible(boolean visible) {
 		if (this.visible == visible) return;
 		this.visible = visible;
-		if (visible) redraw();
+		if (visible) redraw("SGNode.setVisible() [" + this + "]");
 		else redrawPending = false;
 		invalidateCompositeBounds();
 	}
@@ -407,7 +407,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/* Helper method. */
 	private void updateApplyRotate3D() {
 		if (!app.g.is3D())
-			throw new Error("SGNode.updateApplyRotate3D() should be used in a 3D context.");
+			throw new Error("SGNode.updateApplyRotate3D() should be used in a 3D context. [" + this
+					+ "]");
 		applyRotate = rotationX != 0 || rotationY != 0 || rotationZ != 0;
 		applyTransformation = applyTranslate || applyRotate || applyScale;
 	}
@@ -478,7 +479,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * Get the z-position of the origin of this node. Only available in a 3D-scene-graph.
 	 */
 	// public float getZ() {
-	// if (!app.g.is3D()) throw new Error("SGNode.getZ() should be used in a 3D context.");
+	// if (!app.g.is3D()) throw new Error("SGNode.getZ() should be used in a 3D context. [" + this +
+	// "]");
 	// return z;
 	// }
 	
@@ -489,7 +491,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	// public void setZ(float z) {
 	// if (this.z == z) return;
-	// if (!app.g.is3D()) throw new Error("SGNode.setZ(float) should be used in a 3D context.");
+	// if (!app.g.is3D()) throw new Error("SGNode.setZ(float) should be used in a 3D context. [" +
+	// this + "]");
 	// this.z = z;
 	// updateApplyTranslate();
 	// // invalidateTransformationMatrix(); // TODO: for now not enabled in 3D
@@ -527,7 +530,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// public SGNode moveTo(float x, float y, float z) {
 	// if (this.x == x && this.y == y && this.z == z) return this;
 	// if (!app.g.is3D())
-	// throw new Error("SGNode.moveTo(float, float, float) should be used in a 3D context.");
+	// throw new Error("SGNode.moveTo(float, float, float) should be used in a 3D context. [" + this
+	// + "]");
 	// this.x = x;
 	// this.y = y;
 	// this.z = z;
@@ -569,7 +573,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// public SGNode move(float x, float y, float z) {
 	// if (x == 0 && y == 0 && z == 0) return this;
 	// if (!app.g.is3D())
-	// throw new Error("SGNode.move(float, float, float) should be used in a 3D context.");
+	// throw new Error("SGNode.move(float, float, float) should be used in a 3D context. [" + this +
+	// "]");
 	// this.x += x;
 	// this.y += y;
 	// this.z += z;
@@ -662,7 +667,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public float getRotationX() {
 		if (!app.g.is3D())
-			throw new Error("SGNode.getRotationX() should be used in a 3D context.");
+			throw new Error("SGNode.getRotationX() should be used in a 3D context. [" + this + "]");
 		return rotationX;
 	}
 	
@@ -673,12 +678,12 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public void setRotationX(float rotation) {
 		if (!app.g.is3D())
-			throw new Error("SGNode.setRotationX() should be used in a 3D context.");
+			throw new Error("SGNode.setRotationX() should be used in a 3D context. [" + this + "]");
 		if (this.rotationX == rotation) return;
 		this.rotationX = rotation;
 		updateApplyRotate3D();
 		// invalidateTransformationMatrix(); // for now not enabled in 3D
-		redraw();
+		redraw("SGNode.setRotationX() [" + this + "]");
 	}
 	
 	/**
@@ -688,7 +693,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public void addRotationX(float rotation) {
 		if (!app.g.is3D())
-			throw new Error("SGNode.addRotationX() should be used in a 3D context.");
+			throw new Error("SGNode.addRotationX() should be used in a 3D context. [" + this + "]");
 		setRotationX(rotationX + rotation);
 	}
 	
@@ -699,7 +704,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public float getRotationY() {
 		if (!app.g.is3D())
-			throw new Error("SGNode.getRotationY() should be used in a 3D context.");
+			throw new Error("SGNode.getRotationY() should be used in a 3D context. [" + this + "]");
 		return rotationY;
 	}
 	
@@ -710,12 +715,12 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public void setRotationY(float rotation) {
 		if (!app.g.is3D())
-			throw new Error("SGNode.setRotationY() should be used in a 3D context.");
+			throw new Error("SGNode.setRotationY() should be used in a 3D context. [" + this + "]");
 		if (this.rotationY == rotation) return;
 		this.rotationY = rotation;
 		updateApplyRotate3D();
 		// invalidateTransformationMatrix(); // for now not enabled in 3D
-		redraw();
+		redraw("SGNode.setRotationY() [" + this + "]");
 	}
 	
 	/**
@@ -725,7 +730,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public void addRotationY(float rotation) {
 		if (!app.g.is3D())
-			throw new Error("SGNode.addRotationY() should be used in a 3D context.");
+			throw new Error("SGNode.addRotationY() should be used in a 3D context. [" + this + "]");
 		setRotationY(rotationY + rotation);
 	}
 	
@@ -736,7 +741,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public float getRotationZ() {
 		if (!app.g.is3D())
-			throw new Error("SGNode.getRotationZ() should be used in a 3D context.");
+			throw new Error("SGNode.getRotationZ() should be used in a 3D context. [" + this + "]");
 		return rotationZ;
 	}
 	
@@ -747,12 +752,12 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public void setRotationZ(float rotation) {
 		if (!app.g.is3D())
-			throw new Error("SGNode.setRotationZ() should be used in a 3D context.");
+			throw new Error("SGNode.setRotationZ() should be used in a 3D context. [" + this + "]");
 		if (this.rotationZ == rotation) return;
 		this.rotationZ = rotation;
 		updateApplyRotate3D();
 		// invalidateTransformationMatrix(); // for now not enabled in 3D
-		redraw();
+		redraw("SGNode.setRotationZ() [" + this + "]");
 	}
 	
 	/**
@@ -762,7 +767,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public void addRotationZ(float rotation) {
 		if (!app.g.is3D())
-			throw new Error("SGNode.addRotationZ() should be used in a 3D context.");
+			throw new Error("SGNode.addRotationZ() should be used in a 3D context. [" + this + "]");
 		setRotationZ(rotationZ + rotation);
 	}
 	
@@ -882,10 +887,10 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public SGNode addNode(SGNode child) {
 		// println(">> SGNode[" + this.name + "].addNode()");
-		if (child.is3D) throw new Error("3D content is currently not supported.");
+		if (child.is3D) throw new Error("3D content is currently not supported. [" + this + "]");
 		if (child == this) { throw new Error("Trying to add a node to itself for node: " + this); }
 		if (child.addedToSG)
-			throw new Error("SGNode.addNode(SGNode) was" + " called (on " + this.toString()
+			throw new Error("SGNode.addNode(SGNode) was" + " called (on " + this
 					+ ") with a child that" + " is already part of the scene-graph - container: .");
 		
 		if (children.contains(child)) { throw new Error("The child (" + child
@@ -897,7 +902,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			if (child.wantsSysMouseEvents) forwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) forwardKeyEventTo(child);
 			if (child.updatePending && !updatePending) invalidateUpdate();
-			redraw(); // always request redraw
+			redraw("SGNode.addNode(SGNode) [" + this + "]"); // always request redraw
 			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
 		return child;
@@ -944,7 +949,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			child.parent = null;
 			if (child.wantsSysMouseEvents) unforwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) unforwardKeyEventsTo(child);
-			redraw();
+			redraw("SGNode.removeNode(SGNode) [" + this + "]");
 			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
 		else throw new Error("SGNode.removeChild(SGNode) was"
@@ -961,7 +966,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			if (child.wantsSysMouseEvents) unforwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) unforwardKeyEventsTo(child);
 			if (children.size() == 0) hasChildren = false;
-			redraw();
+			redraw("SGNode.removeNode(int) [" + this + "]");
 			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
 		catch (IndexOutOfBoundsException exc) {
@@ -981,7 +986,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		}
 		children.clear();
 		hasChildren = false;
-		redraw();
+		redraw("SGNode.removeAllNodes() [" + this + "]");
 		if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 	}
 	
@@ -1116,7 +1121,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 			if (localCompositeBounds == null) localCompositeBounds = new Rectangle();
 			if (!visible) {
 				localCompositeBounds.setBounds(0, 0, 0, 0);
-				System.err.println("Avoid calling getLocalCompositeBounds() on invisible nodes.");
+				System.err.println("Avoid calling getLocalCompositeBounds() on invisible nodes. ["
+						+ this + "]");
 			}
 			else {
 				localCompositeBounds.setBounds(getLocalBounds());
@@ -1167,7 +1173,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @param local Should be true when the local bounds should be invalidated too.
 	 */
 	protected void invalidateCompositeBounds() {
-		// if (is3D) throw new Error("3D content is currently not supported.");
+		// if (is3D) throw new Error("3D content is currently not supported. [" + this + "]");
 		// println(">> SGNode[" + name + "].invalidateCompositeBounds()");
 		if (compositeBoundsChanged) return;
 		
@@ -1200,14 +1206,15 @@ public class SGNode extends SGNodeBase implements PConstants {
 			if (compositeBounds == null) compositeBounds = new Rectangle();
 			if (!visible) {
 				localCompositeBounds.setBounds(0, 0, 0, 0);
-				System.err.println("Avoid calling getCompositeBounds() on invisible nodes.");
+				System.err.println("Avoid calling getCompositeBounds() on invisible nodes. ["
+						+ this + "]");
 			}
 			else {
 				Rectangle b = compositeBounds;
 				b.setBounds(getLocalCompositeBounds());
 				if (applyRotate || applyScale) {
-					if (trace) println(" - applyRotate || applyScale");
-					if (localTMatrixDirty) throw new Error("localTMatrix is dirty");
+					if (trace) println(" - applyRotate || applyScale [" + this + "]");
+					if (localTMatrixDirty) throw new Error("localTMatrix is dirty [" + this + "]");
 					float x1 = localTMatrix.multX(b.x, b.y);
 					float y1 = localTMatrix.multY(b.x, b.y);
 					float x2 = localTMatrix.multX(b.x + b.width, b.y);
@@ -1222,7 +1229,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 					b.height = ceil(Math.max(Math.max(y1, y2), Math.max(y3, y4))) - b.y;
 				}
 				else if (applyTranslate) {
-					if (trace) println(" - applyTranslate only");
+					if (trace) println(" - applyTranslate only [" + this + "]");
 					b.x = floor(b.x + x);
 					b.y = floor(b.y + y);
 				}
@@ -1435,7 +1442,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		redrawPending = false;
 		
 		if (cached) {
-			if (trace) println(" * cached!");
+			if (trace) println(" * cached! [" + this + "]");
 			if (cachedBounds == null) cachedBounds = new Rectangle();
 			if (cache == null) {
 				cacheContentDirty = true;
@@ -1450,7 +1457,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			}
 			
 			if (cacheContentDirty) {
-				if (trace) println(" * cacheContentDirty!");
+				if (trace) println(" * cacheContentDirty! [" + this + "]");
 				cache.beginDraw();
 				cache.resetMatrix();
 				cache.translate(-cachedBounds.x, -cachedBounds.y);
@@ -1503,7 +1510,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (applyTransformation) {
 			g.pushMatrix();
 			if (is3D) { // 3D node
-				throw new Error("3D is currently not supported.");
+				throw new Error("3D is currently not supported. [" + this + "]");
 				// if (applyTranslate) g.translate(x, y, z);
 				// if (applyRotate) {
 				// if (rotationX != 0) g.rotateX(rotationX);
@@ -1512,7 +1519,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 				// }
 			}
 			else { // 2D-scene-graph
-					// if (applyTranslate) println(" translate(" + x + ", " + y + ")");
+					// if (applyTranslate) println(" translate(" + x + ", " + y + ") [" + this +
+					// "]");
 				if (applyTranslate) g.translate(x, y);
 				if (applyRotate) g.rotate(rotation);
 			}
@@ -1578,7 +1586,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (hasChildren) for (SGNode child : children) {
 			child.invalidateTransformation();
 		}
-		redraw();
+		redraw("SGNode.invalidateTransformation() [" + this + "]");
 		// Do not invalidate the composite-bounds here. Doing so would also invalidate the
 		// composite-bounds in the children of this node, which is not necesssary.
 	}
@@ -1650,7 +1658,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @default false
 	 */
 	public void setCached(boolean cached) {
-		if (app.g.is3D()) { throw new Error("Caching is currently not supported for 3D content."); }
+		if (app.g.is3D()) { throw new Error("Caching is currently not supported for 3D content. ["
+				+ this + "]"); }
 		if (this.cached == cached) return;
 		this.cached = cached;
 		if (cached) cacheContentDirty = true;

@@ -322,7 +322,7 @@ public class SGImage extends SGNode {
 		if (this.explicitWidth == explicitWidth) return;
 		this.explicitWidth = explicitWidth;
 		updateImageParams();
-		redraw();
+		redraw("SGImage.setWidth(int) [" + this + "]");
 	}
 	
 	/**
@@ -333,7 +333,7 @@ public class SGImage extends SGNode {
 		if (this.explicitHeight == explicitHeight) return;
 		this.explicitHeight = explicitHeight;
 		updateImageParams();
-		redraw();
+		redraw("SGImage.setHeight(int) [" + this + "]");
 	}
 	
 	/**
@@ -351,7 +351,7 @@ public class SGImage extends SGNode {
 		if (this.imageMode == imageMode) return this;
 		imageMode = imageMode;
 		updateImageParams();
-		redraw();
+		redraw("SGImage.setImageMode(SGImageMode) [" + this + "]");
 		return this;
 	}
 	
@@ -370,14 +370,14 @@ public class SGImage extends SGNode {
 		if (this.sourceImg == image) return this;
 		this.sourceImg = image;
 		updateImageParams();
-		redraw();
+		redraw("SGImage.setImage(PImage) [" + this + "]");
 		return this;
 	}
 	
 	public SGImage noTint() {
 		if (!applyTint) return this;
 		applyTint = false;
-		redraw();
+		redraw("SGImage.noTint() [" + this + "]");
 		return this;
 	}
 	
@@ -386,7 +386,7 @@ public class SGImage extends SGNode {
 		tintRGB = rgb;
 		tintAlpha = alpha;
 		applyTint = true;
-		redraw();
+		redraw("SGImage.setTint(int, float) [" + this + "]");
 		return this;
 	}
 	
@@ -406,7 +406,7 @@ public class SGImage extends SGNode {
 	public SGImage setBlendMode(int blendMode) {
 		if (this.blendMode == blendMode) return this;
 		this.blendMode = blendMode;
-		redraw();
+		redraw("SGImage.setBlendMode(int) [" + this + "]");
 		return this;
 	}
 	
@@ -418,7 +418,7 @@ public class SGImage extends SGNode {
 	@Override
 	protected void draw(PGraphics g) {
 		if (targetImg == null) {
-			System.err.println("The image is not available.");
+			System.err.println("The image is not available. [" + this + "]");
 			return;
 		}
 		

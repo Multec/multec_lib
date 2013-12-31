@@ -103,7 +103,7 @@ public class SGEllipse extends SGFigure {
 		if (this.diamX == diamX) return this;
 		this.diamX = diamX;
 		invalidateLocalBounds();
-		redraw();
+		redraw("SGEllipse.setDiamX(float) [" + this + "]");
 		return this;
 	}
 	
@@ -122,7 +122,7 @@ public class SGEllipse extends SGFigure {
 		if (this.diamY == diamY) return this;
 		this.diamY = diamY;
 		invalidateLocalBounds();
-		redraw();
+		redraw("SGEllipse.setDiamY(float) [" + this + "]");
 		return this;
 	}
 	
@@ -138,7 +138,7 @@ public class SGEllipse extends SGFigure {
 		this.diamX = diamX;
 		this.diamY = diamY;
 		invalidateLocalBounds();
-		redraw();
+		redraw("SGEllipse.setDiam(float, float) [" + this + "]");
 		return this;
 	}
 	
@@ -153,7 +153,7 @@ public class SGEllipse extends SGFigure {
 		this.diamX = diam;
 		this.diamY = diam;
 		invalidateLocalBounds();
-		redraw();
+		redraw("SGEllipse.setDiam(float) [" + this + "]");
 		return this;
 	}
 	
@@ -174,7 +174,7 @@ public class SGEllipse extends SGFigure {
 		if (this.centerX == centerX) return this;
 		this.centerX = centerX;
 		invalidateLocalBounds();
-		redraw();
+		redraw("SGEllipse.setCenterX(float) [" + this + "]");
 		return this;
 	}
 	
@@ -193,7 +193,7 @@ public class SGEllipse extends SGFigure {
 		if (this.centerY == centerY) return this;
 		this.centerY = centerY;
 		invalidateLocalBounds();
-		redraw();
+		redraw("SGEllipse.setCenterY(float) [" + this + "]");
 		return this;
 	}
 	
@@ -206,7 +206,7 @@ public class SGEllipse extends SGFigure {
 		this.centerX = centerX;
 		this.centerY = centerY;
 		invalidateLocalBounds();
-		redraw();
+		redraw("SGEllipse.setCenter(float, float) [" + this + "]");
 		return this;
 	}
 	

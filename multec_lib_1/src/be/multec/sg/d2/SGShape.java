@@ -130,7 +130,7 @@ public class SGShape extends SGFigure {
 	public void setShape(PShape shape) {
 		checkShape(shape);
 		this.shape = shape;
-		redraw();
+		redraw("SGShape.setShape(PShape) [" + this + "]");
 		invalidateLocalBounds();
 	}
 	
@@ -162,7 +162,7 @@ public class SGShape extends SGFigure {
 		if (this.position == position) return;
 		this.position = position;
 		invalidateLocalBounds();
-		redraw();
+		redraw("SGShape.setPosition(Position) [" + this + "]");
 	}
 	
 	// *********************************************************************************************
@@ -178,7 +178,7 @@ public class SGShape extends SGFigure {
 		if (useNodeStyles) return;
 		useNodeStyles = true;
 		invalidateLocalBounds();
-		redraw();
+		redraw("SGShape.useNodeStyles() [" + this + "]");
 	}
 	
 	/**
@@ -199,7 +199,7 @@ public class SGShape extends SGFigure {
 		if (!useNodeStyles) return;
 		useNodeStyles = false;
 		invalidateLocalBounds();
-		redraw();
+		redraw("SGShape.useShapeStyles() [" + this + "]");
 	}
 	
 	/**
@@ -332,12 +332,12 @@ public class SGShape extends SGFigure {
 		if (trace) println(">> SGShape[" + this.name + "].updateBounds()");
 		
 		if (shape.getMatrix() != null) { throw new Error(
-				"Transformations in shapes are currently not supported."); }
+				"Transformations in shapes are currently not supported. [" + this + "]"); }
 		
 		switch (shape.getFamily()) {
 		
 			case GROUP:
-				if (trace) println(" # GROUP");
+				if (trace) println(" # GROUP [" + this + "]");
 				PShape[] children = shape.getChildren();
 				for (int i = 0; i < children.length; i++) {
 					if (children[i] != null) updateBounds(children[i], xxyy);
@@ -345,12 +345,12 @@ public class SGShape extends SGFigure {
 				break;
 			
 			case PShape.PRIMITIVE:
-				if (trace) println(" # PRIMITIVE");
+				if (trace) println(" # PRIMITIVE [" + this + "]");
 				updatePrimBounds(shape, xxyy);
 				break;
 			
 			case PShape.PATH:
-				if (trace) println(" # PATH");
+				if (trace) println(" # PATH [" + this + "]");
 				int vertexCount = shape.getVertexCount();
 				float hsw = actualStrokeWeight(shape) / 2;
 				
@@ -369,11 +369,13 @@ public class SGShape extends SGFigure {
 				break;
 			
 			case PShape.GEOMETRY:
-				System.err.println("GEOMETRY case in SGShape.updateBounds() is not implemented.");
+				System.err.println("GEOMETRY case in SGShape.updateBounds() is not implemented. ["
+						+ this + "]");
 				break;
 			
 			default:
-				throw new Error("Unexpected shape family: '" + shape.getFamily() + "'.");
+				throw new Error("Unexpected shape family: '" + shape.getFamily() + "'. [" + this
+						+ "]");
 		}
 	}
 	
@@ -395,7 +397,7 @@ public class SGShape extends SGFigure {
 					updateBounds(pp[0], pp[1], hsw, xxyy);
 					updateBounds(pp[2], pp[3], hsw, xxyy);
 				}
-				else System.err.println("3D not supported.");
+				else System.err.println("3D not supported. [" + this + "]");
 				break;
 			
 			case TRIANGLE:
@@ -476,11 +478,14 @@ public class SGShape extends SGFigure {
 				break;
 			
 			case BOX:
-				System.err.println("BOX case in SGShape.updatePrimBounds() is not implemented.");
+				System.err.println("BOX case in SGShape.updatePrimBounds() is not implemented. ["
+						+ this + "]");
 				break;
 			
 			case SPHERE:
-				System.err.println("SPHERE case in SGShape.updatePrimBounds() is not implemented.");
+				System.err
+						.println("SPHERE case in SGShape.updatePrimBounds() is not implemented. ["
+								+ this + "]");
 				break;
 		
 		}
@@ -508,7 +513,7 @@ public class SGShape extends SGFigure {
 	/* @see be.multec.sg.SGNode#mouseHitTest() */
 	@Override
 	protected boolean contains(float x, float y) {
-		if (traceContains) println(" >> contains(" + x + ", " + y + ")");
+		if (traceContains) println(" >> contains(" + x + ", " + y + ") [" + this + "]");
 		if (position == Position.CORNER) {
 			if (localBoundsChanged) validateLocalBounds();
 			return contains(shape, x + sourceBounds.x, y + sourceBounds.y);
@@ -524,9 +529,9 @@ public class SGShape extends SGFigure {
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
 	private boolean contains(PShape shape, float x, float y) {
-		if (traceContains) println(" >> contains_sys(" + x + ", " + y + ")");
+		if (traceContains) println(" >> contains_sys(" + x + ", " + y + ") [" + this + "]");
 		if (shape.getMatrix() != null) { throw new Error(
-				"Transformations in shapes are currently not supported."); }
+				"Transformations in shapes are currently not supported. [" + this + "]"); }
 		switch (shape.getFamily()) {
 		
 			case GROUP:
@@ -544,30 +549,34 @@ public class SGShape extends SGFigure {
 				return shape.contains(x, y);
 				
 			case PShape.GEOMETRY:
-				System.err.println("GEOMETRY case in SGShape.contains() is not implemented.");
+				System.err.println("GEOMETRY case in SGShape.contains() is not implemented. ["
+						+ this + "]");
 				return false;
 				
 			default:
-				throw new Error("Unexpected shape family: '" + shape.getFamily() + "'.");
+				throw new Error("Unexpected shape family: '" + shape.getFamily() + "'. [" + this
+						+ "]");
 		}
 	}
 	
 	private boolean containsPrim(PShape shape, float x, float y) {
-		if (traceContains) println("  >> containsPrim(" + x + ", " + y + ")");
+		if (traceContains) println("  >> containsPrim(" + x + ", " + y + ") [" + this + "]");
 		float[] pp = shape.getParams();
 		float hsw = actualStrokeWeight(shape) / 2;
 		boolean b0, b1;
 		
 		switch (shape.getKind()) {
 			case POINT:
-				System.err.println("POINT case in SGShape.containsPrim() is not implemented.");
+				System.err.println("POINT case in SGShape.containsPrim() is not implemented. ["
+						+ this + "]");
 				break;
 			
 			case LINE:
-				System.err.println("LINE case in SGShape.containsPrim() is not implemented.");
+				System.err.println("LINE case in SGShape.containsPrim() is not implemented. ["
+						+ this + "]");
 				if (pp.length == 4) { // 2D
 				}
-				else System.err.println("3D not supported.");
+				else System.err.println("3D not supported. [" + this + "]");
 				break;
 			
 			case TRIANGLE:
@@ -606,15 +615,18 @@ public class SGShape extends SGFigure {
 				return ta * ta + tb * tb <= 1;
 				
 			case ARC:
-				System.err.println("ARC case in SGShape.containsPrim() is not implemented.");
+				System.err.println("ARC case in SGShape.containsPrim() is not implemented. ["
+						+ this + "]");
 				break;
 			
 			case BOX:
-				System.err.println("BOX case in SGShape.containsPrim() is not implemented.");
+				System.err.println("BOX case in SGShape.containsPrim() is not implemented. ["
+						+ this + "]");
 				break;
 			
 			case SPHERE:
-				System.err.println("SPHERE case in SGShape.containsPrim() is not implemented.");
+				System.err.println("SPHERE case in SGShape.containsPrim() is not implemented. ["
+						+ this + "]");
 				break;
 		
 		}
@@ -626,8 +638,9 @@ public class SGShape extends SGFigure {
 	// ---------------------------------------------------------------------------------------------
 	
 	private void checkShape(PShape shape) {
-		if (shape == null) { throw new Error("The shape is null"); }
-		if (app.g.is2D() && shape.is3D()) { throw new Error("A 3D-shape was used in a 2D context."); }
+		if (shape == null) { throw new Error("The shape is null [" + this + "]"); }
+		if (app.g.is2D() && shape.is3D()) { throw new Error(
+				"A 3D-shape was used in a 2D context. [" + this + "]"); }
 	}
 	
 	private float actualStrokeWeight(PShape shape) {
