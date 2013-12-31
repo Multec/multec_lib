@@ -1377,6 +1377,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	// ---------------------------------------------------------------------------------------------
 	
+	public static boolean traceRedraw = false;
+	
 	/**
 	 * Trigger a redraw of this node.
 	 * 
@@ -1385,20 +1387,26 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * 
 	 * @see invalidateContentFromUpdate
 	 */
-	final public void redraw(String caller) {
-		boolean trace = false;
-		if (trace) {
-			if (redrawPending)
-				println(">> SGNode[" + name + "].redraw() from " + caller + " - REDRAW PENDING");
+	public void redraw(String caller) {
+		if (app.drawActive) {
+			if (traceRedraw) println("* REDRAW ENQUEUED for [" + name + "] from [" + caller + "]");
+			app.enqueueRedraw(this);
+			return;
 		}
-		if (disposed || redrawPending) return;
+		
+		if (disposed || redrawPending) {
+			if (traceRedraw) println("* REDRAW IGNORED for [" + name + "] from [" + caller + "]");
+			return;
+		}
+		
 		redrawPending = true;
+		println("* REDRAW SCHEDULED for [" + name + "] from [" + caller + "]");
 		
 		if (!visible) return;
 		if (cached) cacheContentDirty = true;
 		if (parent != null) parent.redraw(caller);
 		else if (isStage && app != null) {
-			if (trace) println("# REDRAW " + app.name + " in " + name + " from " + caller);
+			println("* REDRAW - loop() CALLED from [" + name + "] from [" + caller + "]");
 			app.loop();
 		}
 		if (SGApp.DEBUG_MODE) checkTree();

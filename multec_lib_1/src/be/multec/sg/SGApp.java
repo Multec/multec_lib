@@ -187,8 +187,9 @@ public class SGApp extends PApplet {
 	}
 	
 	// ---------------------------------------------------------------------------------------------
-	// Functionality for enqueueing asynchronous redraw requests while the redraw traversal is
-	// active.
+	// Functionality for enqueueing redraw requests that were issued while the redraw traversal is
+	// active. This can happen when a redraw request was issued in draw-code (which is probably not
+	// a good idea). This can also happen when a redraw request was issued by another thread.
 	
 	private Object redrawQueueLock = new Object();
 	private ArrayList<SGNode> redrawQueue = new ArrayList<SGNode>();
