@@ -1407,13 +1407,14 @@ public class SGNode extends SGNodeBase implements PConstants {
 		}
 		
 		redrawPending = true;
-		println("* REDRAW SCHEDULED for [" + name + "] from [" + caller + "]");
+		if (traceRedraw) println("* REDRAW SCHEDULED for [" + name + "] from [" + caller + "]");
 		
 		if (!visible) return;
 		if (cached) cacheContentDirty = true;
 		if (parent != null) parent.redraw(caller);
 		else if (isStage && app != null) {
-			println("* REDRAW - loop() CALLED from [" + name + "] from [" + caller + "]");
+			if (traceRedraw)
+				println("* REDRAW - loop() CALLED from [" + name + "] from [" + caller + "]");
 			app.loop();
 		}
 		if (SGApp.DEBUG_MODE) checkTree();
