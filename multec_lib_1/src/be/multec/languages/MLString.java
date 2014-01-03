@@ -3,7 +3,6 @@ package be.multec.languages;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-
 /**
  * Represents a multi-lingual string. The actual string depends on the currently set language in the
  * given MLStrings manager.
@@ -60,7 +59,8 @@ public class MLString {
 	/**
 	 * @return The actual string.
 	 */
-	public String getString() {
+	@Override
+	public String toString() {
 		return string;
 	}
 	

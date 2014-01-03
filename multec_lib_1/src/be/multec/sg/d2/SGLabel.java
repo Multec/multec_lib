@@ -419,7 +419,7 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 	
 	public SGLabel(SGApp app, MLString mlString) {
 		super(app);
-		this.label = mlString.getString();
+		this.label = mlString.toString();
 		this.name = "Label (" + label + ")";
 		this.mlString = mlString;
 		mlString.addUpdateHandler(this);
@@ -428,7 +428,7 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 	
 	public SGLabel(SGApp app, MLString mlString, ILabelStyles styles) {
 		super(app);
-		this.label = mlString.getString();
+		this.label = mlString.toString();
 		this.name = "Label (" + label + ")";
 		this.mlString = mlString;
 		mlString.addUpdateHandler(this);
@@ -437,7 +437,7 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 	
 	public SGLabel(SGApp app, MLString mlString, SGLabelMode labelMode) {
 		super(app);
-		this.label = mlString.getString();
+		this.label = mlString.toString();
 		this.name = "Label (" + label + ")";
 		this.mlString = mlString;
 		mlString.addUpdateHandler(this);
@@ -446,7 +446,7 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 	
 	public SGLabel(SGApp app, MLString mlString, HAlignMode hAlignMode, VAlignMode vAlignMode) {
 		super(app);
-		this.label = mlString.getString();
+		this.label = mlString.toString();
 		this.name = "Label (" + label + ")";
 		this.mlString = mlString;
 		mlString.addUpdateHandler(this);
@@ -1068,7 +1068,7 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 	/* @see be.multec.sg.utils.IMLStringUpdateHandler#stringUpdated(be.multec.sg.utils.MLString) */
 	@Override
 	public void stringUpdated(MLString mlString) {
-		label = mlString.getString();
+		label = mlString.toString();
 		invalidateLabel();
 	}
 	
