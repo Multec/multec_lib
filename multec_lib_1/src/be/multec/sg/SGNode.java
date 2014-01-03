@@ -1200,6 +1200,20 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// ---------------------------------------------------------------------------------------------
 	
 	public boolean drawBounds = false;
+
+	public void drawBounds() {
+		if (this.drawBounds) return;
+		this.drawBounds = true;
+		redraw();
+	}
+
+	public void drawBounds(boolean drawBounds) {
+		if (this.drawBounds == drawBounds) return;
+		this.drawBounds = drawBounds;
+		redraw();
+	}
+
+	// ---------------------------------------------------------------------------------------------
 	
 	/**
 	 * A system function that applies the transformations, calls the draw() method for this node and
