@@ -544,7 +544,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 		updateApplyRotate2D();
 		invalidateTransformation();
 		invalidateCompositeBounds();
-		
 	}
 	
 	/**

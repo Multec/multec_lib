@@ -137,9 +137,9 @@ public class MLStrings {
 	public String getString(String id) {
 		// System.out.println(">> Strings.getString(" + id + ")");
 		String string = currentStringMap.get(id);
-		if (string == null) { throw new Error("Could not find the string for id " + id
-				+ " for the currently selected language " + currentLanguage.label + " ["
-				+ currentLanguage.code + "]."); }
+		if (string == null) { throw new Error("Could not find the string for id '" + id
+				+ "' for the currently selected language '" + currentLanguage.label + "' ("
+				+ currentLanguage.code + ")."); }
 		return string;
 	}
 	
