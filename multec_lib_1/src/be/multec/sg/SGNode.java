@@ -353,8 +353,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 	public void visible(boolean visible) {
 		if (this.visible == visible) return;
 		this.visible = visible;
-		if (visible) redraw("SGNode.setVisible() [" + this + "]");
-		else redrawPending = false;
+		if (visible) redraw("SGNode.setVisible(true) [" + this + "]");
+		else if (parent != null) parent.redraw("SGNode.setVisible(false) [" + this + "]");
 		invalidateCompositeBounds();
 	}
 	
