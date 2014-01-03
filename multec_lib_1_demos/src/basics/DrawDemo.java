@@ -2,7 +2,6 @@ package basics;
 
 import java.awt.Color;
 
-import processing.core.PConstants;
 import processing.core.PGraphics;
 import be.multec.sg.SGApp;
 import be.multec.sg.SGNode;
@@ -19,44 +18,56 @@ public class DrawDemo extends SGWindow {
 	
 	public static void main(String[] args) {
 		DrawDemo app = new DrawDemo();
-		app.setRenderer(PConstants.P2D);
-		app.open("Draw Demo", 50, 30, 1024, 960, new Color(0xFFFFFF));
+		// app.setRenderer(PConstants.P2D);
+		app.open("Draw Demo", 50, 30, 960, 960, Color.BLACK);
 	}
 	
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
 	
-	/* @see be.multec.sg.SGApp#setupSG() */
+	/* @see processing.core.PApplet#setup() */
 	@Override
-	public void setupSG() {
+	public void setup() {
 		noLoop();
 		// smooth();
 		
-		addNode(new DrawNode_1(this));
+		addNode(new SGNode(this, width, height) {
+			/* @see be.multec.sg.SGNode#draw(processing.core.PGraphics) */
+			@Override
+			protected void draw(PGraphics g) {
+				g.fill(0xFFFFCC00);
+				g.noStroke();
+				g.rect(20, 20, width - 40, height - 40);
+			}
+		});
+		
+		addNode(new Flower(this), width / 2, height / 2);
 	}
 	
-	class DrawNode_1 extends SGNode {
+	class Flower extends SGNode {
 		
-		public DrawNode_1(SGApp app) {
+		private int leafCount = 16;
+		
+		private int leafSize = 500;
+		
+		public Flower(SGApp app) {
 			super(app);
 		}
 		
 		/* @see be.multec.sg.SGNode#draw(processing.core.PGraphics) */
 		@Override
 		protected void draw(PGraphics g) {
-			g.smooth();
-			g.quality = 4;
-			g.fill(0xFFFFCC00);
-			g.rect(0, 0, 200, 200);
-			g.fill(0);
-			g.beginShape();
-			g.vertex(100, 100);
-			g.bezierVertex(0, 0, 200, 0, 100, 100);
-			g.bezierVertex(200, 0, 200, 200, 100, 100);
-			g.bezierVertex(200, 200, 0, 200, 100, 100);
-			g.bezierVertex(0, 200, 0, 0, 100, 100);
-			g.endShape();
+			float angle = TWO_PI / leafCount;
+			g.fill(0, 60);
+			g.noStroke();
+			for (int i = 0; i < leafCount; i++) {
+				g.beginShape();
+				g.vertex(0, 0);
+				g.bezierVertex(-leafSize, -leafSize, +leafSize, -leafSize, 0, 0);
+				g.endShape();
+				g.rotate(angle);
+			}
 		}
 		
 	}

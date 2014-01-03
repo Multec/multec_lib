@@ -78,7 +78,6 @@ public class SGRect extends SGFigure {
 	
 	/* Common initialization. */
 	private void initRect(float width, float height) {
-		is3D = false;
 		this.rectWidth = width;
 		this.rectHeight = height;
 		centerX = width / 2;

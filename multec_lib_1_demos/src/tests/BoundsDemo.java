@@ -39,10 +39,10 @@ public class BoundsDemo extends SGWindow {
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
-	
-	/* @see be.multec.sg.SGApp#setupSG() */
+
+	/* @see processing.core.PApplet#setup() */
 	@Override
-	public void setupSG() {
+	public void setup() {
 		// noLoop();
 		
 		SGFigure n1, n2, n3;

@@ -3,6 +3,8 @@ package basics;
 import java.awt.Color;
 import java.awt.Rectangle;
 
+import processing.core.PConstants;
+import processing.core.PFont;
 import processing.core.PGraphics;
 import be.multec.sg.SGApp;
 import be.multec.sg.SGNode;
@@ -27,7 +29,7 @@ public class LabelDemo extends SGWindow {
 	
 	public static void main(String[] args) {
 		LabelDemo app = new LabelDemo();
-		// app.setRenderer(PConstants.P2D);
+		//app.setRenderer(PConstants.P2D); // OK
 		app.open("LabelDemo", 50, 30, 750, 750, new Color(0xFFCC00));
 	}
 	
@@ -61,32 +63,35 @@ public class LabelDemo extends SGWindow {
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
 	
-	/* @see be.multec.sg.SGApp#setupSG() */
+	/* @see processing.core.PApplet#setup() */
 	@Override
-	public void setupSG() {
+	public void setup() {
 		noLoop();
+		
+		PFont TheSans_ExtraLight_16 = loadFont("TheSans_ExtraLight_16.vlw");
+		PFont TheSans_ExtraLight_32 = loadFont("TheSans_ExtraLight_32.vlw");
 		
 		Color bgColor = new Color(0x77FFFFFF, true);
 		
 		ILabelStyles normalStyles = new SGLabelStyles();
-		normalStyles.setTextSize(18);
-		normalStyles.setFont(loadFont("TheSans-Light-36.vlw"));
+		normalStyles.setTextSize(16);
+		normalStyles.setFont(TheSans_ExtraLight_16);
 		normalStyles.setBackgroundColor(bgColor);
 		
 		ILabelStyles largerStyles = new SGLabelStyles();
-		largerStyles.setTextSize(36);
-		largerStyles.setFont(loadFont("TheSans-Light-36.vlw"));
+		largerStyles.setTextSize(32);
+		largerStyles.setFont(TheSans_ExtraLight_32);
 		largerStyles.setBackgroundColor(bgColor);
 		
 		ILabelStyles paddingStyles = new SGLabelStyles();
-		paddingStyles.setTextSize(18);
-		paddingStyles.setFont(loadFont("TheSans-Light-36.vlw"));
+		paddingStyles.setTextSize(16);
+		paddingStyles.setFont(TheSans_ExtraLight_16);
 		paddingStyles.setBackgroundColor(bgColor);
 		paddingStyles.setPadding(5);
 		
 		ILabelStyles headerStyles = new SGLabelStyles();
-		headerStyles.setTextSize(22);
-		largerStyles.setFont(loadFont("TheSans-Light-36.vlw"));
+		headerStyles.setTextSize(24);
+		headerStyles.setFont(TheSans_ExtraLight_32);
 		
 		// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 		

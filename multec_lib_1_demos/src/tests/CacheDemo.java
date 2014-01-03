@@ -32,10 +32,10 @@ public class CacheDemo extends SGWindow {
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
-	
-	/* @see be.multec.sg.SGApp#setupSG() */
+
+	/* @see processing.core.PApplet#setup() */
 	@Override
-	public void setupSG() {
+	public void setup() {
 		// noLoop();
 		// addChild(new SGLine(this, 0, height / 2, width, height / 2, 0xDDDDDD, 1));
 		

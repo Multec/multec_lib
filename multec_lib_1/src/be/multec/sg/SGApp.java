@@ -1,7 +1,7 @@
 package be.multec.sg;
 
 import java.awt.Color;
-import java.awt.event.KeyEvent;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -13,6 +13,7 @@ import processing.core.PMatrix;
 import processing.core.PMatrix2D;
 import processing.core.PMatrix3D;
 import processing.core.PVector;
+import processing.event.KeyEvent;
 import processing.event.MouseEvent;
 import be.multec.sg.modifiers.IModifier;
 
@@ -23,9 +24,9 @@ import be.multec.sg.modifiers.IModifier;
  * 
  * <h2>Usage</h2>
  * 
- * To create a scene-graph applet, create a class that extends this base-class. Override the
- * <code>setupSG</code> method in this new class. The implementation of this method should
- * initialize the scene-graph by adding one or more scene-graph-nodes to the stage.
+ * To create a scene-graph applet, create a class that extends this base-class. Implement the
+ * <code>setup</code>, in it initialize the scene-graph by adding one or more scene-graph-nodes to
+ * the stage.
  * 
  * Do not add nodes in the scene-graph in the constructor. Some node-implementations require the
  * <code>PGraphics</code> object. This object is not yet available in the constructor. Add the
@@ -64,9 +65,7 @@ public class SGApp extends PApplet {
 	/* False as long as the PApplet.draw() method was not called for the first time. */
 	private boolean setupComplete = false;
 	
-	/*
-	 * The background color.
-	 */
+	/* The background color. */
 	private Color backgroundColor = null;
 	
 	// *********************************************************************************************
@@ -79,20 +78,27 @@ public class SGApp extends PApplet {
 		
 		// Intialize the stage (the root of the scene-graph):
 		stage = new SGStage(this);
-		// registerMethod("keyEvent", this);
 		
 		name = getClassName();
 	}
+	
+	// ---------------------------------------------------------------------------------------------
 	
 	/**
 	 * @see processing.core.PApplet#dispose()
 	 */
 	@Override
 	public void dispose() {
-		stop();
-		noLoop();
-		unregisterMethod("mouseEvent", this);
-		// unregisterMethod("keyEvent", this);
+		stop(); // stop the PApplet animation loop
+		
+		try {
+			unregisterMethod("mouseEvent", this);
+			unregisterMethod("keyEvent", this);
+		}
+		catch (Exception e) {
+			// ignore
+		}
+		
 		if (stage != null) {
 			stage.dispose(true);
 			stage = null;
@@ -101,28 +107,8 @@ public class SGApp extends PApplet {
 	}
 	
 	// *********************************************************************************************
-	// Essential methods:
-	// ---------------------------------------------------------------------------------------------
-	
-	/**
-	 * Implement this method to initialize the scene-graph.
-	 */
-	protected void setupSG() {}
-	
-	// *********************************************************************************************
 	// PApplet methods:
 	// ---------------------------------------------------------------------------------------------
-	
-	/**
-	 * This method should be called by overriding methods.
-	 * 
-	 * @see processing.core.PApplet#setup()
-	 */
-	@Override
-	public void setup() {
-		smooth();
-		setupSG();
-	}
 	
 	/** Trace the draw traversal when true. */
 	public boolean traceDrawTrav = false;
@@ -142,8 +128,11 @@ public class SGApp extends PApplet {
 		if (!setupComplete) {
 			stageMouseMatrix = g.getMatrix();
 			registerMethod("mouseEvent", this);
+			registerMethod("keyEvent", this);
 			setupComplete = true;
 		}
+		
+		if (stage == null) return; // do not continue when the stage is not yet ready, or gone.
 		
 		// Flag the mouse vector as dirty when the mouse moved since the previous frame:
 		if (mouseX != pmouseX || mouseY != pmouseY) stageMouseVectorDirty = true;
@@ -311,31 +300,6 @@ public class SGApp extends PApplet {
 		return stageMouseVector;
 	}
 	
-	/**
-	 * Class for internal system mouse events.
-	 */
-	public class MouseSystemEvent {
-		
-		private SGApp app;
-		
-		public MouseEvent processingEvent;
-		
-		public boolean consumed = false;
-		
-		public MouseSystemEvent(SGApp app) {
-			this.app = app;
-		}
-		
-		public MouseSystemEvent reset(MouseEvent processingEvent) {
-			this.processingEvent = processingEvent;
-			consumed = false;
-			return this;
-		}
-	}
-	
-	/* The mouseSysEvent singleton. */
-	private MouseSystemEvent mouseSysEvent = new MouseSystemEvent(this);
-	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
 	/**
@@ -343,16 +307,14 @@ public class SGApp extends PApplet {
 	 * 
 	 * @param event
 	 */
-	public void mouseEvent(MouseEvent pEvent) {
-		int x = pEvent.getX();
-		int y = pEvent.getY();
-		int action = pEvent.getAction();
-		
+	public void mouseEvent(MouseEvent event) {
 		if (!stage.wantsSysMouseEvents) return;
 		
-		if ((x != mouseVector.x) || (y != mouseVector.y)) stageMouseVectorDirty = true;
+		int x = event.getX();
+		int y = event.getY();
+		int action = event.getAction();
 		
-		mouseSysEvent.reset(pEvent);
+		if ((x != mouseVector.x) || (y != mouseVector.y)) stageMouseVectorDirty = true;
 		
 		switch (action) {
 			case MouseEvent.ENTER:
@@ -368,31 +330,31 @@ public class SGApp extends PApplet {
 				// touches the window while it was out of system focus (on Mac OS X at least).
 				mouseX = x;
 				mouseY = y;
-				stage.mousePressed_sys(mouseSysEvent);
+				stage.mousePressed_sys(event);
 				break;
 			case MouseEvent.RELEASE:
 				// Manually set the mouseX & mouseY because this is not yet done when the mouse
 				// touches the window while it was out of system focus (on Mac OS X at least).
 				mouseX = x;
 				mouseY = y;
-				stage.mouseReleased_sys(mouseSysEvent);
+				stage.mouseReleased_sys(event);
 				break;
 			case MouseEvent.CLICK:
 				// Manually set the mouseX & mouseY because this is not yet done when the mouse
 				// touches the window while it was out of system focus (on Mac OS X at least).
 				mouseX = x;
 				mouseY = y;
-				stage.mouseClicked_sys(mouseSysEvent);
+				stage.mouseClicked_sys(event);
 				break;
 			case MouseEvent.MOVE:
 				// println(">> SGApp > MOVE - x, y: (" + x + ", " + y + "),  mouseX/Y: (" + mouseX
 				// + ", " + mouseY + ")");
-				stage.mouseMoved_sys(mouseSysEvent, false);
+				stage.mouseMoved_sys(event, false);
 				break;
 			case MouseEvent.DRAG:
 				// println(">> SGApp > DRAG - x, y: (" + x + ", " + y + "),  mouseX/Y: (" + mouseX
 				// + ", " + mouseY + ")");
-				stage.mouseMoved_sys(mouseSysEvent, true);
+				stage.mouseMoved_sys(event, true);
 				break;
 		}
 	}
@@ -402,22 +364,25 @@ public class SGApp extends PApplet {
 	// ---------------------------------------------------------------------------------------------
 	// Key event handlers:
 	
-	@Override
-	public void keyTyped(KeyEvent e) {
-		super.keyTyped(e);
-		if (stage.wantsSysKeyEvents) stage.keyTyped_sys();
-	}
-	
-	@Override
-	public void keyPressed(KeyEvent e) {
-		super.keyPressed(e);
-		if (stage.wantsSysKeyEvents) stage.keyPressed_sys();
-	}
-	
-	@Override
-	public void keyReleased(KeyEvent e) {
-		super.keyReleased(e);
-		if (stage.wantsSysKeyEvents) stage.keyReleased_sys();
+	/**
+	 * Handler of Processing key events.
+	 * 
+	 * @param event
+	 */
+	public void keyEvent(KeyEvent event) {
+		if (!stage.wantsSysKeyEvents) return;
+		
+		switch (event.getAction()) {
+			case KeyEvent.PRESS:
+				stage.keyTyped_sys(event);
+				break;
+			case KeyEvent.RELEASE:
+				stage.keyPressed_sys(event);
+				break;
+			case KeyEvent.TYPE:
+				stage.keyReleased_sys(event);
+				break;
+		}
 	}
 	
 	// *********************************************************************************************
@@ -445,19 +410,6 @@ public class SGApp extends PApplet {
 	public SGNode addNode(SGNode child, float x, float y) {
 		return stage.addNode(child, x, y);
 	}
-	
-	/**
-	 * Adds a child-node in the stage of this app.
-	 * 
-	 * @param child The child-node to add in this container.
-	 * @param x The x-position to use for the child-node.
-	 * @param y The y-position to use for the child-node.
-	 * @param y The z-position to use for the child-node.
-	 * @throws RuntimeException when the given child is already in the scene-graph
-	 */
-	// public SGNode addNode(SGNode child, float x, float y, float z) {
-	// return stage.addNode(child, x, y, z);
-	// }
 	
 	// ---------------------------------------------------------------------------------------------
 	
@@ -562,20 +514,31 @@ public class SGApp extends PApplet {
 		return pg.getClass().getName().equals(PConstants.P3D);
 	}
 	
+	// *********************************************************************************************
+	// Debug utilities:
 	// ---------------------------------------------------------------------------------------------
-	
-	public String getClassName() {
-		return getClass().getSimpleName() + "[SGApp]";
-	}
 	
 	protected void printMatrix(PMatrix matrix) {
 		if (matrix.getClass() == PMatrix2D.class) ((PMatrix2D) matrix).print();
 		else if (matrix.getClass() == PMatrix3D.class) ((PMatrix3D) matrix).print();
 	}
 	
+	public static void printBounds(Rectangle bounds) {
+		printBounds("- bounds: ", bounds);
+	}
+	
+	public static void printBounds(String prefix, Rectangle bounds) {
+		System.out.println(prefix + bounds.x + ", " + bounds.y + ", " + bounds.width + ", "
+				+ bounds.height);
+	}
+	
 	// *********************************************************************************************
 	// Other methods:
 	// ---------------------------------------------------------------------------------------------
+	
+	public String getClassName() {
+		return getClass().getSimpleName() + "[SGApp]";
+	}
 	
 	@Override
 	public String toString() {

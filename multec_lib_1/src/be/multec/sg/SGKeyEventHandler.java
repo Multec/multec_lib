@@ -1,6 +1,6 @@
 package be.multec.sg;
 
-import processing.core.PApplet;
+import processing.event.KeyEvent;
 
 /**
  * Base implementation for key-event handlers dispatched by an SGNode object.
@@ -24,14 +24,9 @@ public abstract class SGKeyEventHandler {
 	 * configured.
 	 * 
 	 * @param node The node for which the key-event is dispatched.
-	 * @param key The key that was pressed.
-	 * @param keyCode See PApplet.keyCode.
-	 * 
-	 * @see PApplet#keyReleased()
-	 * @see PApplet#key
-	 * @see PApplet#keyCode
+	 * @param event The Processing key event.
 	 */
-	protected void keyTyped(SGNode node, char key, int keyCode) {}
+	protected void keyTyped(SGNode node, KeyEvent event) {}
 	
 	/**
 	 * Called once every time a key is pressed.
@@ -41,27 +36,17 @@ public abstract class SGKeyEventHandler {
 	 * system and how each computer is configured.
 	 * 
 	 * @param node The node for which the key-event is dispatched.
-	 * @param key The key that was pressed.
-	 * @param keyCode See PApplet.keyCode.
-	 * 
-	 * @see PApplet#keyReleased()
-	 * @see PApplet#key
-	 * @see PApplet#keyCode
+	 * @param event The Processing key event.
 	 */
-	protected void keyPressed(SGNode node, char key, int keyCode) {}
+	protected void keyPressed(SGNode node, KeyEvent event) {}
 	
 	/**
 	 * Called once every time a key is released. The key that was released will be stored in the key
 	 * variable.
 	 * 
 	 * @param node The node for which the key-event is dispatched.
-	 * @param key The key that was pressed. See PApplet.key.
-	 * @param keyCode See PApplet.keyCode.
-	 * 
-	 * @see PApplet#keyReleased()
-	 * @see PApplet#key
-	 * @see PApplet#keyCode
+	 * @param event The Processing key event.
 	 */
-	protected void keyReleased(SGNode node, char key, int keyCode) {}
+	protected void keyReleased(SGNode node, KeyEvent event) {}
 	
 }

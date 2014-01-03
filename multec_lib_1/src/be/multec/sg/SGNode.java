@@ -1,5 +1,6 @@
 package be.multec.sg;
 
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -12,7 +13,8 @@ import processing.core.PMatrix;
 import processing.core.PMatrix2D;
 import processing.core.PMatrix3D;
 import processing.core.PVector;
-import be.multec.sg.SGApp.MouseSystemEvent;
+import processing.event.KeyEvent;
+import processing.event.MouseEvent;
 import be.multec.sg.modifiers.IModifier;
 
 /**
@@ -65,7 +67,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	protected boolean disposed = false;
 	
 	/* True when this node represents 3D content. */
-	protected boolean is3D = false;
+	protected final boolean is3D = false;
 	
 	// *********************************************************************************************
 	// Constructors:
@@ -166,7 +168,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		parent = null;
 		isStage = visible = false;
 		
-		applyTranslate = applyRotate = applyRotateX = applyRotateY = applyRotateZ = false;
+		applyTranslate = applyRotate = false;
 		applyScale = applyTransformation = false;
 		
 		localBounds = null;
@@ -279,6 +281,14 @@ public class SGNode extends SGNodeBase implements PConstants {
 		else return getLocalBounds().height;
 	}
 	
+	public int widthInt() {
+		return ceil(width());
+	}
+	
+	public int heightInt() {
+		return ceil(height());
+	}
+	
 	// *********************************************************************************************
 	// Basic accessors:
 	// ---------------------------------------------------------------------------------------------
@@ -332,7 +342,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/**
 	 * @return True when this node is drawn and dispatches mouse or other events.
 	 */
-	public boolean isVisible() {
+	public boolean visible() {
 		return visible;
 	}
 	
@@ -340,7 +350,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @param visible True when this node should be drawn, or false when this node should not be
 	 *            drawn and should not dispatch mouse or other events.
 	 */
-	public void setVisible(boolean visible) {
+	public void visible(boolean visible) {
 		if (this.visible == visible) return;
 		this.visible = visible;
 		if (visible) redraw("SGNode.setVisible() [" + this + "]");
@@ -350,12 +360,12 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	/** Set the visibility of this node to true. */
 	public void show() {
-		if (!visible) setVisible(true);
+		if (!visible) visible(true);
 	}
 	
 	/** Set the visibility of this node to false. */
 	public void hide() {
-		if (visible) setVisible(false);
+		if (visible) visible(false);
 	}
 	
 	// *********************************************************************************************
@@ -376,15 +386,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	private boolean applyRotate = false;
 	
 	/* True when a rotation around the x-axis needs to be applied this node in a 3D-scene-graph. */
-	private boolean applyRotateX = false;
-	
-	/* True when a rotation around the y-axis needs to be applied this node in a 3D-scene-graph. */
-	private boolean applyRotateY = false;
-	
-	/* True when a rotation around the z-axis needs to be applied this node in a 3D-scene-graph. */
-	private boolean applyRotateZ = false;
-	
-	/* True when a rotation around the x-axis needs to be applied this node in a 3D-scene-graph. */
 	private boolean applyScale = false;
 	
 	/* True when some transformation needs to be applied before drawing this node. */
@@ -394,22 +395,13 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	/* Helper method. */
 	private void updateApplyTranslate() {
-		applyTranslate = x != 0 || y != 0 || z != 0;
+		applyTranslate = x != 0 || y != 0;
 		applyTransformation = applyTranslate || applyRotate || applyScale;
 	}
 	
 	/* Helper method. */
 	private void updateApplyRotate2D() {
 		applyRotate = rotation != 0;
-		applyTransformation = applyTranslate || applyRotate || applyScale;
-	}
-	
-	/* Helper method. */
-	private void updateApplyRotate3D() {
-		if (!app.g.is3D())
-			throw new Error("SGNode.updateApplyRotate3D() should be used in a 3D context. [" + this
-					+ "]");
-		applyRotate = rotationX != 0 || rotationY != 0 || rotationZ != 0;
 		applyTransformation = applyTranslate || applyRotate || applyScale;
 	}
 	
@@ -428,12 +420,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * to the coordinate system of its parent.
 	 */
 	private float y = 0;
-	
-	/**
-	 * The position in the z-axis of the origin of the coordinate system of this node with respect
-	 * to the coordinate system of its parent. This property is only relevant in a 3D-scene-graph.
-	 */
-	private float z = 0;
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
@@ -475,30 +461,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 		invalidateCompositeBounds();
 	}
 	
-	/**
-	 * Get the z-position of the origin of this node. Only available in a 3D-scene-graph.
-	 */
-	// public float getZ() {
-	// if (!app.g.is3D()) throw new Error("SGNode.getZ() should be used in a 3D context. [" + this +
-	// "]");
-	// return z;
-	// }
-	
-	/**
-	 * Set the z-position of the origin of this node. Only available in a 3D-scene-graph.
-	 * 
-	 * @param z the z to set
-	 */
-	// public void setZ(float z) {
-	// if (this.z == z) return;
-	// if (!app.g.is3D()) throw new Error("SGNode.setZ(float) should be used in a 3D context. [" +
-	// this + "]");
-	// this.z = z;
-	// updateApplyTranslate();
-	// // invalidateTransformationMatrix(); // TODO: for now not enabled in 3D
-	// invalidateContent();
-	// }
-	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
 	/**
@@ -518,29 +480,16 @@ public class SGNode extends SGNodeBase implements PConstants {
 		return this;
 	}
 	
-	// /**
-	// * Sets the 3D-position of this object to the given coordinate. Only available in a
-	// * 3D-scene-graph.
-	// *
-	// * @param x
-	// * @param y
-	// * @param z
-	// * @return This object.
-	// */
-	// public SGNode moveTo(float x, float y, float z) {
-	// if (this.x == x && this.y == y && this.z == z) return this;
-	// if (!app.g.is3D())
-	// throw new Error("SGNode.moveTo(float, float, float) should be used in a 3D context. [" + this
-	// + "]");
-	// this.x = x;
-	// this.y = y;
-	// this.z = z;
-	// updateApplyTranslate();
-	// // invalidateTransformationMatrix(); // for now not enabled in 3D
-	// invalidateContent();
-	// invalidateCompositeBounds();
-	// return this;
-	// }
+	/**
+	 * Sets the position of this object to the given coordinate.
+	 * 
+	 * @param point
+	 * @return This object.
+	 */
+	public SGNode moveTo(Point point) {
+		moveTo(point.x, point.y);
+		return this;
+	}
 	
 	/**
 	 * Updates the position of this object by adding the given coordinate-vector to the current
@@ -560,29 +509,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 		invalidateCompositeBounds();
 		return this;
 	}
-	
-	// /**
-	// * Updates the position of this object by adding the given coordinate-vector to the current
-	// * position. Only available in a 3D-scene-graph.
-	// *
-	// * @param x
-	// * @param y
-	// * @param z
-	// * @return This object.
-	// */
-	// public SGNode move(float x, float y, float z) {
-	// if (x == 0 && y == 0 && z == 0) return this;
-	// if (!app.g.is3D())
-	// throw new Error("SGNode.move(float, float, float) should be used in a 3D context. [" + this +
-	// "]");
-	// this.x += x;
-	// this.y += y;
-	// this.z += z;
-	// updateApplyTranslate();
-	// // invalidateTransformationMatrix(); // TODO: for now not enabled in 3D
-	// invalidateContent();
-	// return this;
-	// }
 	
 	// *********************************************************************************************
 	// Rotation in 2D-scene-graphs:
@@ -633,142 +559,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 		updateApplyRotate2D();
 		invalidateTransformation();
 		invalidateCompositeBounds();
-	}
-	
-	// *********************************************************************************************
-	// Rotation in 3D-scene-graphs:
-	// ---------------------------------------------------------------------------------------------
-	
-	/**
-	 * The angle around the x-axis in radians that determines the rotation of the coordinate system
-	 * of this node with respect to the coordinate system of its parent. This property is only
-	 * relevant in a 3D-scene-graph.
-	 */
-	private float rotationX = 0;
-	
-	/**
-	 * The angle around the y-axis in radians that determines the rotation of the coordinate system
-	 * of this node with respect to the coordinate system of its parent. This property is only
-	 * relevant in a 3D-scene-graph.
-	 */
-	private float rotationY = 0;
-	
-	/**
-	 * The angle around the z-axis in radians that determines the rotation of the coordinate system
-	 * of this node with respect to the coordinate system of its parent. This property is only
-	 * relevant in a 3D-scene-graph.
-	 */
-	private float rotationZ = 0;
-	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	/**
-	 * @return The rotation in radians around the x-axis. Only available in 3D-graphs.
-	 */
-	public float getRotationX() {
-		if (!app.g.is3D())
-			throw new Error("SGNode.getRotationX() should be used in a 3D context. [" + this + "]");
-		return rotationX;
-	}
-	
-	/**
-	 * Sets the rotation in radians around the x-axis. Only available in 3D-graphs.
-	 * 
-	 * @param rotation the rotation in radians to set
-	 */
-	public void setRotationX(float rotation) {
-		if (!app.g.is3D())
-			throw new Error("SGNode.setRotationX() should be used in a 3D context. [" + this + "]");
-		if (this.rotationX == rotation) return;
-		this.rotationX = rotation;
-		updateApplyRotate3D();
-		// invalidateTransformationMatrix(); // for now not enabled in 3D
-		redraw("SGNode.setRotationX() [" + this + "]");
-	}
-	
-	/**
-	 * Adds an angle in radians to the current x-rotation. Only available in 3D-graphs.
-	 * 
-	 * @param rotation the angle in radians to add to the current rotation around the x-axis
-	 */
-	public void addRotationX(float rotation) {
-		if (!app.g.is3D())
-			throw new Error("SGNode.addRotationX() should be used in a 3D context. [" + this + "]");
-		setRotationX(rotationX + rotation);
-	}
-	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	/**
-	 * @return The rotation in radians around the y-axis. Only available in 3D-graphs.
-	 */
-	public float getRotationY() {
-		if (!app.g.is3D())
-			throw new Error("SGNode.getRotationY() should be used in a 3D context. [" + this + "]");
-		return rotationY;
-	}
-	
-	/**
-	 * Sets the rotation in radians around the y-axis. Only available in 3D-graphs.
-	 * 
-	 * @param rotation the rotation to set
-	 */
-	public void setRotationY(float rotation) {
-		if (!app.g.is3D())
-			throw new Error("SGNode.setRotationY() should be used in a 3D context. [" + this + "]");
-		if (this.rotationY == rotation) return;
-		this.rotationY = rotation;
-		updateApplyRotate3D();
-		// invalidateTransformationMatrix(); // for now not enabled in 3D
-		redraw("SGNode.setRotationY() [" + this + "]");
-	}
-	
-	/**
-	 * Adds an angle in radians to the current y-rotation. Only available in 3D-graphs.
-	 * 
-	 * @param rotation the angle in radians to add to the current rotation around the y-axis
-	 */
-	public void addRotationY(float rotation) {
-		if (!app.g.is3D())
-			throw new Error("SGNode.addRotationY() should be used in a 3D context. [" + this + "]");
-		setRotationY(rotationY + rotation);
-	}
-	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	/**
-	 * @return The rotation in radians around the z-axis. Only available in 3D-graphs.
-	 */
-	public float getRotationZ() {
-		if (!app.g.is3D())
-			throw new Error("SGNode.getRotationZ() should be used in a 3D context. [" + this + "]");
-		return rotationZ;
-	}
-	
-	/**
-	 * Sets the rotation in radians around the z-axis. Only available in 3D-graphs.
-	 * 
-	 * @param rotation the rotation to set
-	 */
-	public void setRotationZ(float rotation) {
-		if (!app.g.is3D())
-			throw new Error("SGNode.setRotationZ() should be used in a 3D context. [" + this + "]");
-		if (this.rotationZ == rotation) return;
-		this.rotationZ = rotation;
-		updateApplyRotate3D();
-		// invalidateTransformationMatrix(); // for now not enabled in 3D
-		redraw("SGNode.setRotationZ() [" + this + "]");
-	}
-	
-	/**
-	 * Adds an angle in radians to the current z-rotation. Only available in 3D-graphs.
-	 * 
-	 * @param rotation the angle in radians to add to the current rotation around the z-axis
-	 */
-	public void addRotationZ(float rotation) {
-		if (!app.g.is3D())
-			throw new Error("SGNode.addRotationZ() should be used in a 3D context. [" + this + "]");
-		setRotationZ(rotationZ + rotation);
 	}
 	
 	// *********************************************************************************************
@@ -922,22 +712,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 		child.moveTo(x, y);
 		return child;
 	}
-	
-	// /**
-	// * Adds a child-node in this container.
-	// *
-	// * @param node The child-node to add in this container.
-	// * @param x The x-position to use for the child-node.
-	// * @param y The y-position to use for the child-node.
-	// * @param y The z-position to use for the child-node.
-	// * @throws RuntimeException when the given child is already in the scene-graph
-	// */
-	// public SGNode addNode(SGNode node, float x, float y, float z) {
-	// if (!app.g.is3D()) return addNode(node, x, y);
-	// addNode(node);
-	// node.moveTo(x, y, z);
-	// return node;
-	// }
 	
 	// ---------------------------------------------------------------------------------------------
 	
@@ -1387,7 +1161,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	public static boolean traceRedraw = false;
 	
 	/**
-	 * Trigger a redraw of this node.
+	 * Request a redraw of this node.
 	 * 
 	 * Use the invalidateContentFromUpdate method instead of this method when you want to request a
 	 * redraw of this node from within the update loop.
@@ -1435,7 +1209,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * 
 	 * @see SGNode#draw(processing.core.PGraphics)
 	 */
-	protected void draw_sys(PGraphics g) {
+	void draw_sys(PGraphics g) {
 		boolean trace = false;
 		if (app.updateActive) throw new Error();
 		if (!visible || disposed) return;
@@ -1510,21 +1284,10 @@ public class SGNode extends SGNodeBase implements PConstants {
 		}
 		if (applyTransformation) {
 			g.pushMatrix();
-			if (is3D) { // 3D node
-				throw new Error("3D is currently not supported. [" + this + "]");
-				// if (applyTranslate) g.translate(x, y, z);
-				// if (applyRotate) {
-				// if (rotationX != 0) g.rotateX(rotationX);
-				// if (rotationY != 0) g.rotateY(rotationY);
-				// if (rotationZ != 0) g.rotateZ(rotationZ);
-				// }
-			}
-			else { // 2D-scene-graph
-					// if (applyTranslate) println(" translate(" + x + ", " + y + ") [" + this +
-					// "]");
-				if (applyTranslate) g.translate(x, y);
-				if (applyRotate) g.rotate(rotation);
-			}
+			if (is3D) throw new Error("3D is currently not supported. [" + this + "]");
+			
+			if (applyTranslate) g.translate(x, y);
+			if (applyRotate) g.rotate(rotation);
 			if (applyScale) g.scale(scale);
 		}
 		
@@ -1873,7 +1636,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	static boolean traceMClicked = false;
 	
 	/* System method. */
-	void mouseClicked_sys(MouseSystemEvent msEvent) {
+	void mouseClicked_sys(MouseEvent event) {
 		boolean trace = false;
 		String tm = null;
 		if (traceMClicked) {
@@ -1884,7 +1647,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (!visible) return;
 		if (dispatchMouseEvents && containsMouse()) {
 			if (traceMClicked) println(tm + " - dispatched [" + this + "]");
-			msEvent.consumed = true;
+			event.consumed = true;
 			dispatchMouseClicked(getMousePosition());
 			return;
 		}
@@ -1893,18 +1656,18 @@ public class SGNode extends SGNodeBase implements PConstants {
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
-				child.mouseClicked_sys(msEvent);
-				if (msEvent.consumed) return;
+				child.mouseClicked_sys(event);
+				if (event.consumed) return;
 			}
 		}
 	}
 	
 	/* System method. */
-	void mousePressed_sys(MouseSystemEvent msEvent) {
+	void mousePressed_sys(MouseEvent event) {
 		if (!visible) return;
 		if (dispatchMouseEvents && containsMouse()) {
 			mouseWasPressed = true;
-			msEvent.consumed = true;
+			event.consumed = true;
 			dispatchMousePressed(getMousePosition());
 			return;
 		}
@@ -1912,18 +1675,18 @@ public class SGNode extends SGNodeBase implements PConstants {
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
-				child.mousePressed_sys(msEvent);
-				if (msEvent.consumed) return;
+				child.mousePressed_sys(event);
+				if (event.consumed) return;
 			}
 		}
 	}
 	
 	/* System method. */
-	void mouseReleased_sys(MouseSystemEvent msEvent) {
+	void mouseReleased_sys(MouseEvent event) {
 		if (!visible) return;
 		if (dispatchMouseEvents && containsMouse()) {
 			mouseWasPressed = false;
-			msEvent.consumed = true;
+			event.consumed = true;
 			dispatchMouseReleased(getMousePosition());
 			return;
 		}
@@ -1931,8 +1694,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
-				child.mouseReleased_sys(msEvent);
-				if (msEvent.consumed) return;
+				child.mouseReleased_sys(event);
+				if (event.consumed) return;
 			}
 		}
 	}
@@ -1940,13 +1703,13 @@ public class SGNode extends SGNodeBase implements PConstants {
 	private boolean traceMMove = false;
 	
 	/* System method. */
-	void mouseMoved_sys(MouseSystemEvent msEvent, boolean dragged) {
+	void mouseMoved_sys(MouseEvent event, boolean dragged) {
 		if (!visible) return;
 		if (traceMMove) println(">> " + this + ".mouseMoved_sys() - dragged: " + dragged);
 		if (dispatchMouseEvents) {
 			PVector mousePos = getMousePosition();
 			if (contains_sys(mousePos)) {
-				msEvent.consumed = true;
+				event.consumed = true;
 				if (currentOverNode == this) dispatchMouseMoved(mousePos, dragged);
 				else {
 					if (currentOverNode != null && currentOverNode.wantsSysMouseEvents)
@@ -1964,14 +1727,14 @@ public class SGNode extends SGNodeBase implements PConstants {
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
-				child.mouseMoved_sys(msEvent, dragged);
-				if (msEvent.consumed) return;
+				child.mouseMoved_sys(event, dragged);
+				if (event.consumed) return;
 			}
 		}
 	}
 	
 	/* System method. */
-	void mouseWheel_sys() {
+	void mouseWheel_sys(MouseEvent event) {
 		// TODO
 	}
 	
@@ -2008,12 +1771,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// *********************************************************************************************
 	// Key functionality:
 	// ---------------------------------------------------------------------------------------------
-	
-	/*
-	 * True when the key-events have been directly enabled by calling the enableKeyEvents() method.
-	 * Do not modify this property.
-	 */
-	private boolean keyEventsEnabled = false;
 	
 	/*
 	 * True when at least one key-event-handler has been registered on this node using
@@ -2072,135 +1829,55 @@ public class SGNode extends SGNodeBase implements PConstants {
 	}
 	
 	private void updateKeyFlags() {
-		dispatchKeyEvents = keyEventsEnabled || keyHandlerAdded;
-		wantsSysKeyEvents = keyEventsEnabled || keyHandlerAdded || forwardSysKeyEvents;
-	}
-	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	
-	/**
-	 * Call this method if the key-event-handlers on this node need to be called.
-	 * 
-	 * @see SGNode#disableKeyEvents()
-	 */
-	public final void enableKeyEvents() {
-		keyEventsEnabled = true;
-		updateKeyFlags();
-	}
-	
-	/**
-	 * Call this method if the key-event-handlers on this node no longer need to be called.
-	 * 
-	 * @see SGNode#enableKeyEvents()
-	 */
-	public final void disableKeyEvents() {
-		keyEventsEnabled = false;
-		updateKeyFlags();
+		dispatchKeyEvents = keyHandlerAdded;
+		wantsSysKeyEvents = keyHandlerAdded || forwardSysKeyEvents;
 	}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Key-event dispatch helper methods.
 	
-	private void dispatchKeyTyped() {
-		keyTyped(app.key, app.keyCode);
+	private void dispatchKeyTyped(KeyEvent event) {
 		for (SGKeyEventHandler handler : keyHandlers)
-			handler.keyTyped(this, app.key, app.keyCode);
+			handler.keyTyped(this, event);
 	}
 	
-	private void dispatchKeyPressed() {
-		keyPressed(app.key, app.keyCode);
+	private void dispatchKeyPressed(KeyEvent event) {
 		for (SGKeyEventHandler handler : keyHandlers)
-			handler.keyPressed(this, app.key, app.keyCode);
+			handler.keyPressed(this, event);
 	}
 	
-	private void dispatchKeyReleased() {
-		keyReleased(app.key, app.keyCode);
+	private void dispatchKeyReleased(KeyEvent event) {
 		for (SGKeyEventHandler handler : keyHandlers)
-			handler.keyReleased(this, app.key, app.keyCode);
+			handler.keyReleased(this, event);
 	}
-	
-	// ---------------------------------------------------------------------------------------------
-	
-	/**
-	 * Called once every time a key is pressed, but action keys such as Ctrl, Shift, and Alt are
-	 * ignored. Override this method to handle this key-event. Alternatively a key-event handler can
-	 * be registered.
-	 * 
-	 * Because of how operating systems handle key repeats, holding down a key will cause multiple
-	 * calls to keyTyped(), the rate is set by the operating system and how each computer is
-	 * configured.
-	 * 
-	 * @param key The key that was pressed.
-	 * @param keyCode See PApplet.keyCode.
-	 * 
-	 * @see SGNode#addKeyEventHandler(SGKeyEventHandler)
-	 * @see PApplet#keyTyped()
-	 * @see PApplet#key
-	 * @see PApplet#keyCode
-	 */
-	protected void keyTyped(char key, int keyCode) {}
-	
-	/**
-	 * Called once every time a key is pressed. The key that was pressed is stored in the key
-	 * variable. Override this method to handle this key-event. Alternatively a key-event handler
-	 * can be registered.
-	 * 
-	 * Because of how operating systems handle key repeats, holding down a key may cause multiple
-	 * calls to keyPressed() (and keyReleased() as well). The rate of repeat is set by the operating
-	 * system and how each computer is configured.
-	 * 
-	 * @param key The key that was pressed.
-	 * @param keyCode See PApplet.keyCode.
-	 * 
-	 * @see SGNode#addKeyEventHandler(SGKeyEventHandler)
-	 * @see PApplet#keyPressed()
-	 * @see PApplet#key
-	 * @see PApplet#keyCode
-	 */
-	protected void keyPressed(char key, int keyCode) {}
-	
-	/**
-	 * Called once every time a key is released. The key that was released will be stored in the key
-	 * variable. Override this method to handle this key-event. Alternatively a key-event handler
-	 * can be registered.
-	 * 
-	 * @param key The key that was pressed.
-	 * @param keyCode See PApplet.keyCode.
-	 * 
-	 * @see SGNode#addKeyEventHandler(SGKeyEventHandler)
-	 * @see PApplet#keyReleased()
-	 * @see PApplet#key
-	 * @see PApplet#keyCode
-	 */
-	protected void keyReleased(char key, int keyCode) {}
 	
 	// ---------------------------------------------------------------------------------------------
 	// system key methods:
 	
 	/* System method. */
-	void keyTyped_sys() {
-		if (dispatchKeyEvents) dispatchKeyTyped();
+	void keyTyped_sys(KeyEvent event) {
+		if (dispatchKeyEvents) dispatchKeyTyped(event);
 		if (forwardSysKeyEvents) {
 			for (SGNode child : keyChildren)
-				if (child.visible) child.keyTyped_sys();
+				if (child.visible) child.keyTyped_sys(event);
 		}
 	}
 	
 	/* System method. */
-	void keyPressed_sys() {
-		if (dispatchKeyEvents) dispatchKeyPressed();
+	void keyPressed_sys(KeyEvent event) {
+		if (dispatchKeyEvents) dispatchKeyPressed(event);
 		if (forwardSysKeyEvents) {
 			for (SGNode child : keyChildren)
-				if (child.visible) child.keyPressed_sys();
+				if (child.visible) child.keyPressed_sys(event);
 		}
 	}
 	
 	/* System method. */
-	void keyReleased_sys() {
-		if (dispatchKeyEvents) dispatchKeyReleased();
+	void keyReleased_sys(KeyEvent event) {
+		if (dispatchKeyEvents) dispatchKeyReleased(event);
 		if (forwardSysKeyEvents) {
 			for (SGNode child : keyChildren)
-				if (child.visible) child.keyReleased_sys();
+				if (child.visible) child.keyReleased_sys(event);
 		}
 	}
 	

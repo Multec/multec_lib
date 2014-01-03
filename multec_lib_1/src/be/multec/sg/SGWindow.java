@@ -1,16 +1,26 @@
 package be.multec.sg;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.event.KeyEvent;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
+import processing.core.PApplet;
 import processing.core.PConstants;
+import processing.event.KeyEvent;
+import processing.event.MouseEvent;
 
 /**
  * Base class for windowed scene-graph applications.
@@ -18,12 +28,35 @@ import processing.core.PConstants;
  * <h2>Application setup</h2>
  * 
  * To create a single-window application, create a class that extends this base-class. Override the
- * <code>setupSG</code> method in this new class. The implementation of this method should
- * initialize the scene-graph by adding one or more scene-graph-nodes to the stage. See the
- * documentation of the <code>SGApp</code> class for more details.
+ * <code>setup</code> method in this new class. The implementation of this method should initialize
+ * the scene-graph by adding one or more scene-graph-nodes to the stage. See the documentation of
+ * the <code>SGApp</code> class for more details.
  * 
  * To start the application and open the window, create an new object of your custom class, and call
  * one of the <code>open</code> or <code>openFullscreen</code> methods.
+ * 
+ * <h3>Window configuration</h3>
+ * 
+ * Certain configurations of the window need to be set before opening the window. These are listed
+ * below.
+ * 
+ * <dl>
+ * 
+ * <dt>The Processing renderer</dt>
+ * <dd>See setRenderer(String).</dd>
+ * 
+ * <dt>The window decoration</dt>
+ * <dd>See setUndecorated(boolean).</dd>
+ * 
+ * <dt>The fullscreen-mode</dt>
+ * <dd>See setFullscreenMode(FullscreenMode).</dd>
+ * 
+ * <dt>Window resizability</dt>
+ * <dd>See setResizable(boolean).</dd>
+ * 
+ * </dl>
+ * 
+ * <h3>Application setup</h3>
  * 
  * The following is an example of a minimal single-application class:
  * 
@@ -58,16 +91,20 @@ public class SGWindow extends SGApp {
 	// Attributes:
 	// ---------------------------------------------------------------------------------------------
 	
-	/** The default horizontal position of the window. */
-	public static int defaultWindowX = 50;
-	
-	/** The default vertical position of the window. */
-	public static int defaultWindowY = 30;
+	/** The default position of the window. */
+	public static Point DEFAULT_FRAME_POSITION = new Point(50, 30);
 	
 	// ---------------------------------------------------------------------------------------------
-	// application state:
+	// Logging
 	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	public static boolean logToFile = false;
+	
+	public static final Logger logger = Logger.getLogger("SGWindow");
+	
+	private FileHandler loggerFH = null;
+	
+	// ---------------------------------------------------------------------------------------------
+	// Application state:
 	
 	/* The title of this application. This title is also shown in the header of the window. */
 	private String title;
@@ -75,106 +112,28 @@ public class SGWindow extends SGApp {
 	/* The underlying Java AWT Frame object, which is the window in which the app is opened. */
 	private Frame frame;
 	
-	/*
-	 * The width of the window content. In the default implementation the scene-graph will occupy
-	 * the complete window content.
+	/* True when the application was started. */
+	private boolean started = false;
+	
+	/**
+	 * @return True when the application was started.
 	 */
-	private int contentWidth;
+	public boolean started() {
+		return started;
+	}
 	
-	/*
-	 * The height of the window content. In the default implementation the scene-graph will occupy
-	 * the complete window content.
-	 */
-	private int contentHeight;
+	/* True when the window was opened in exclusive fullscreen mode. */
+	private boolean exclusiveFullscreenActive = false;
 	
-	/* The x-position of the stage (which holds the scene-graph content). */
-	private int stageX = 0;
+	/* The display, set when the window was opened in exclusive fullscreen mode. */
+	private GraphicsDevice exclusiveFullscreenDisplay = null;
 	
-	/* The y-position of the stage (which holds the scene-graph content). */
-	private int stageY = 0;
-	
-	private boolean resizable = false;
-	
-	private boolean undecorated = false;
+	// *********************************************************************************************
+	// Properties to set before opening the windowed application:
+	// ---------------------------------------------------------------------------------------------
 	
 	/* The renderer. @default PConstants#JAVA2D */
 	private String renderer = JAVA2D;
-	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// application state:
-	
-	// True when the application was started.
-	private boolean started = false;
-	
-	// True when the application window is being closed.
-	private boolean closing = false;
-	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// system properties:
-	
-	/*
-	 * True when the frame should be disposed when the app is disposed. This value is false when the
-	 * shutdown-hook set in the constructor is triggered, in which case the frame is already
-	 * disposed or is about to be disposed.
-	 */
-	private boolean disposeFrame = false;
-	
-	// *********************************************************************************************
-	// Constructors:
-	// ---------------------------------------------------------------------------------------------
-	
-	/** Basic constructor. */
-	public SGWindow() {
-		super();
-		
-		final SGWindow app = this;
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			@Override
-			public void run() {
-				// println(">> " + app.getClassName() + " shutdownHook - closing: " + closing);
-				if (app.closing) return;
-				try {
-					disposeFrame = false;
-					// app.windowClosed();
-					// app.dispatchWindowClosed();
-					app.dispose();
-				}
-				catch (Exception exception) {
-					System.err.println("! ERROR in shutdownHook for " + app.getClassName() + ": "
-							+ exception.getMessage());
-				}
-			}
-		});
-	}
-	
-	/**
-	 * Do not call this method. If you want to to close the window, call the <code>close()</code>
-	 * method. Override this method to dispose of elements when the window is closed, but don't
-	 * forget to call <code>super.dispose()</code>.
-	 * 
-	 * @see close()
-	 * @see processing.core.PApplet#dispose()
-	 */
-	@Override
-	public void dispose() {
-		synchronized (this) {
-			// println(">> " + getClassName() + ".dispose() - closing: " + closing
-			// + ", disposeFrame: " + disposeFrame);
-			if (closing) return;
-			closing = true;
-		}
-		super.dispose();
-		if (disposeFrame) frame.dispose();
-	}
-	
-	/** Close the application. */
-	public final void close() {
-		dispose();
-	}
-	
-	// *********************************************************************************************
-	// Setters to use before opening the application:
-	// ---------------------------------------------------------------------------------------------
 	
 	/**
 	 * Use this method before opening the window, i.e. before calling the open() or openFullscreen()
@@ -185,8 +144,12 @@ public class SGWindow extends SGApp {
 	 * <li>PConstants.P2D: hardware accelerated 2D (see http://processing.org/tutorials/p3d/)</li>
 	 * </ul>
 	 * 
-	 * The P3D renderer cannot be used because 3D content is currently not supported in this
-	 * framework.
+	 * <strong>Notes</strong>
+	 * <ul>
+	 * <li>The P3D renderer cannot be used because 3D content is currently not supported in this
+	 * framework.</li>
+	 * <li>It is currently not possible to have two fullscreen windows when using the P2D renderer.</li>
+	 * </ul>
 	 * 
 	 * @param renderer the renderer to set.
 	 * 
@@ -206,6 +169,215 @@ public class SGWindow extends SGApp {
 		return renderer;
 	}
 	
+	// ---------------------------------------------------------------------------------------------
+	
+	/* True when this window should not be decorated. */
+	private boolean undecorated = false;
+	
+	/**
+	 * Specify whether the window should be decorated. This setting is ignored when opening a
+	 * fullscreen window. Fullscreen windows are always undecorated.
+	 * 
+	 * @param undecorated True when this window should not be decorated.
+	 */
+	public void setUndecorated(boolean undecorated) {
+		this.undecorated = undecorated;
+	}
+	
+	/**
+	 * @return True when this window will not be decorated.
+	 */
+	public boolean isUndecorated() {
+		return undecorated;
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	/* True when this window is to be resizable. */
+	private boolean resizable = false;
+	
+	/**
+	 * Sets whether this frame is resizable by the user.
+	 * 
+	 * @param resizable true if this frame is resizable; false otherwise.
+	 */
+	public void setResizable(boolean resizable) {
+		if (this.resizable == resizable) return;
+		this.resizable = resizable;
+		if (frame != null) frame.setResizable(resizable);
+	}
+	
+	/**
+	 * Indicates whether this frame is resizable by the user. By default, all frames are initially
+	 * resizable.
+	 * 
+	 * @return true if the user can resize this frame; false otherwise.
+	 */
+	public boolean isResizable() {
+		return resizable;
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	public static enum FullscreenMode {
+		
+		/**
+		 * Fullscreen mode in which regular windows without decoration are used.
+		 * 
+		 * @default
+		 */
+		FULLSCREEN_WINDOWED,
+		
+		/**
+		 * Fullscreen mode in which the windowing system is suspended so that drawing can be done
+		 * directly to the screen. This mode is not available on all systems.
+		 * 
+		 * This mode cannot be used when multiple fullscreen windows on multiple displays are
+		 * needed.
+		 * 
+		 * For more information, see
+		 * http://docs.oracle.com/javase/tutorial/extra/fullscreen/exclusivemode.html
+		 */
+		FULLSCREEN_EXCLUSIVE
+	}
+	
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	private static FullscreenMode fullscreenMode = FullscreenMode.FULLSCREEN_WINDOWED;
+	
+	/**
+	 * @param mode The fullscreenMode to use, either FullscreenMode.FULLSCREEN_WINDOWED or
+	 *            FullscreenMode.FULLSCREEN_EXCLUSIVE.
+	 */
+	public static void setFullscreenMode(FullscreenMode mode) {
+		if (fullscreenMode == mode) return;
+		fullscreenMode = mode;
+	}
+	
+	/**
+	 * @return The currently set fullscreen mode.
+	 */
+	public static FullscreenMode getFullscreenMode() {
+		return fullscreenMode;
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	/**
+	 * When true then the application is terminated when the window closes.
+	 */
+	public boolean exitOnClose = true;
+	
+	// *********************************************************************************************
+	// Constructors and closing:
+	// ---------------------------------------------------------------------------------------------
+	
+	/** Basic constructor. */
+	public SGWindow() {
+		super();
+		
+		if (logToFile) {
+			try {
+				loggerFH = new FileHandler("SGWindow.log");
+				logger.addHandler(loggerFH);
+				SimpleFormatter formatter = new SimpleFormatter();
+				loggerFH.setFormatter(formatter);
+			}
+			catch (SecurityException e) {
+				System.err.println("Could not setup file handler for logger in SGWindow.");
+				e.printStackTrace(System.err);
+			}
+			catch (IOException e) {
+				System.err.println("Could not setup file handler for logger in SGWindow.");
+				e.printStackTrace(System.err);
+			}
+		}
+		
+		Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+			@Override
+			public void uncaughtException(Thread t, Throwable e) {
+				logger.log(Level.SEVERE,
+						"Uncaught exception in thread '" + t.getName() + "'. " + e, e);
+				loggerFH.flush();
+				// close();
+			}
+		});
+		
+		final SGWindow app = this;
+		
+		// Runtime.getRuntime().addShutdownHook(new Thread() {
+		// @Override
+		// public void run() {
+		// System.out.println(">> ShutdownHook triggered");
+		// }
+		// });
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	/** Close the application. */
+	public final void close() {
+		// println("SGWindow.close()");
+		dispose();
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	/* Disposal synchronization lock. */
+	private final Object disposeLock = new Object();
+	
+	/* True when the disposal process is already running. */
+	private boolean disposing = false;
+	
+	/**
+	 * Do not call this method. If you want to to close the window, call the <code>close()</code>
+	 * method. Override this method to dispose of elements when the window is closed, but don't
+	 * forget to call <code>super.dispose()</code>.
+	 * 
+	 * @see close()
+	 * @see processing.core.PApplet#dispose()
+	 */
+	@Override
+	public void dispose() {
+		// System.err.println("SGWindow.dispose()");
+		
+		synchronized (disposeLock) {
+			if (disposing) return;
+			disposing = true;
+		}
+		
+		super.dispose();
+		
+		if (exclusiveFullscreenActive) {
+			try {
+				exclusiveFullscreenDisplay.setFullScreenWindow(null);
+			}
+			catch (Throwable e) {
+				logger.log(Level.SEVERE, "Failed to stop the exclusive fullscreen mode." + e, e);
+			}
+		}
+		
+		if (frame != null) {
+			try {
+				frame.dispose();
+			}
+			catch (Throwable e) {
+				System.err.println("> s5 error" + e);
+			}
+		}
+		
+		if (loggerFH != null) {
+			try {
+				loggerFH.flush();
+				loggerFH.close();
+			}
+			catch (Throwable e) {
+				System.err.println("Failed to flush or close the log file." + e);
+				e.printStackTrace(System.err);
+			}
+		}
+	}
+	
 	// *********************************************************************************************
 	// Methods to open a regular window:
 	// ---------------------------------------------------------------------------------------------
@@ -214,130 +386,211 @@ public class SGWindow extends SGApp {
 	 * Opens the application in a normal window on the primary display.
 	 * 
 	 * @param title The title to show in the window header.
-	 * @param contentW The width of the window content.
-	 * @param contentH The height of the windows content.
+	 * @param contentWidth The width of the window content.
+	 * @param contentHeight The height of the windows content.
 	 * @param bgColor the background color of the window
 	 */
-	public void open(String title, int contentW, int contentH, Color bgColor) {
-		started = true;
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		GraphicsDevice display = ge.getScreenDevices()[0];
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		this.contentWidth = contentW;
-		this.contentHeight = contentH;
-		setBackground(bgColor);
-		openFrame(gc, defaultWindowX, defaultWindowY, title);
+	public void open(String title, int contentWidth, int contentHeight, Color bgColor) {
+		open_sys(getDefaultDisplay(), contentWidth, contentHeight, DEFAULT_FRAME_POSITION, title,
+				bgColor);
 	}
 	
 	/**
 	 * Opens the application in a normal window on the primary display.
 	 * 
 	 * @param title The title to show in the window header.
-	 * @param x The horizontal position of the window relative to the origin of the default display.
-	 * @param y The vertical position of the window relative to the origin of the default display.
-	 * @param contentW The width of the window content.
-	 * @param contentH The height of the windows content.
+	 * @param frameX The horizontal position of the top-left corner corner of the window relative to
+	 *            the top-left corner of the display.
+	 * @param frameY The vertical position of the top-left corner corner of the window relative to
+	 *            the top-left corner of the display.
+	 * @param contentWidth The width of the window content.
+	 * @param contentHeight The height of the windows content.
 	 * @param bgColor the background color of the window
 	 */
-	public void open(String title, int x, int y, int contentW, int contentH, Color bgColor) {
-		started = true;
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		GraphicsDevice display = ge.getScreenDevices()[0];
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		this.contentWidth = contentW;
-		this.contentHeight = contentH;
-		setBackground(bgColor);
-		openFrame(gc, x, y, title);
-	}
-	
-	/**
-	 * Opens the application in a normal window on the display with the given index.
-	 * 
-	 * @param title The title to show in the window header.
-	 * @param contentW The width of the window content.
-	 * @param contentH The height of the windows content.
-	 * @param bgColor the background color of the window
-	 * @param displayIndex The index of the display, the primary display has index 0, the second
-	 *            display when present has index 1, etc.
-	 */
-	public void open(String title, int contentW, int contentH, int displayIndex, Color bgColor) {
-		started = true;
-		GraphicsDevice display = getDisplay(displayIndex);
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		this.contentWidth = contentW;
-		this.contentHeight = contentH;
-		setBackground(bgColor);
-		openFrame(gc, defaultWindowX, defaultWindowY, title);
-	}
-	
-	/**
-	 * Opens the application in a normal window on the display with the given index.
-	 * 
-	 * @param title The title to show in the window header.
-	 * @param x The horizontal position of the window relative to the origin of the default display.
-	 * @param y The vertical position of the window relative to the origin of the default display.
-	 * @param contentW The width of the window content.
-	 * @param contentH The height of the windows content.
-	 * @param displayIndex The index of the display, the primary display has index 0, the second
-	 *            display when present has index 1, etc.
-	 * @param bgColor the background color of the window
-	 */
-	public void open(String title, int x, int y, int contentW, int contentH, int displayIndex,
+	public void open(String title, int frameX, int frameY, int contentWidth, int contentHeight,
 			Color bgColor)
 	{
-		started = true;
-		GraphicsDevice display = getDisplay(displayIndex);
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		this.contentWidth = contentW;
-		this.contentHeight = contentH;
-		setBackground(bgColor);
-		openFrame(gc, x, y, title);
+		open_sys(getDefaultDisplay(), contentWidth, contentHeight, new Point(frameX, frameY),
+				title, bgColor);
 	}
 	
 	/**
-	 * Opens the application in a normal window on the given display.
+	 * Opens the application in a normal window on the display with the given index.
 	 * 
 	 * @param title The title to show in the window header.
-	 * @param contentW The width of the window content.
-	 * @param contentH The height of the windows content.
-	 * @param display the representation of the display device on which to show the window
+	 * @param contentWidth The width of the window content.
+	 * @param contentHeight The height of the windows content.
 	 * @param bgColor the background color of the window
+	 * @param displayIndex The index of the display, the primary display has index 0, the second
+	 *            display when present has index 1, etc.
 	 */
-	public void open(String title, int contentW, int contentH, GraphicsDevice display, Color bgColor)
+	public void open(String title, int contentWidth, int contentHeight, int displayIndex,
+			Color bgColor)
 	{
-		started = true;
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		this.contentWidth = contentW;
-		this.contentHeight = contentH;
-		setBackground(bgColor);
-		openFrame(gc, defaultWindowX, defaultWindowY, title);
+		open_sys(getDisplay(displayIndex), contentWidth, contentHeight, DEFAULT_FRAME_POSITION,
+				title, bgColor);
+	}
+	
+	/**
+	 * Opens the application in a normal window on the display with the given index.
+	 * 
+	 * @param title The title to show in the window header.
+	 * @param frameX The horizontal position of the top-left corner corner of the window relative to
+	 *            the top-left corner of the display.
+	 * @param frameY The vertical position of the top-left corner corner of the window relative to
+	 *            the top-left corner of the display.
+	 * @param contentWidth The width of the window content.
+	 * @param contentHeight The height of the windows content.
+	 * @param displayIndex The index of the display, the primary display has index 0, the second
+	 *            display when present has index 1, etc.
+	 * @param bgColor the background color of the window
+	 */
+	public void open(String title, int frameX, int frameY, int contentWidth, int contentHeight,
+			int displayIndex, Color bgColor)
+	{
+		open_sys(getDisplay(displayIndex), contentWidth, contentHeight, new Point(frameX, frameY),
+				title, bgColor);
 	}
 	
 	/**
 	 * Opens the application in a normal window on the given display.
 	 * 
 	 * @param title The title to show in the window header.
-	 * @param x The horizontal position of the window relative to the origin of the default display.
-	 * @param y The vertical position of the window relative to the origin of the default display.
-	 * @param contentW The width of the window content.
-	 * @param contentH The height of the windows content.
+	 * @param contentWidth The width of the window content.
+	 * @param contentHeight The height of the windows content.
 	 * @param display the representation of the display device on which to show the window
 	 * @param bgColor the background color of the window
 	 */
-	public void open(String title, int x, int y, int contentW, int contentH,
+	public void open(String title, int contentWidth, int contentHeight, GraphicsDevice display,
+			Color bgColor)
+	{
+		open_sys(display, contentWidth, contentHeight, DEFAULT_FRAME_POSITION, title, bgColor);
+	}
+	
+	/**
+	 * Opens the application in a normal window on the given display.
+	 * 
+	 * @param title The title to show in the window header.
+	 * @param frameX The horizontal position of the top-left corner corner of the window relative to
+	 *            the top-left corner of the display.
+	 * @param frameY The vertical position of the top-left corner corner of the window relative to
+	 *            the top-left corner of the display.
+	 * @param contentWidth The width of the window content.
+	 * @param contentHeight The height of the windows content.
+	 * @param display the representation of the display device on which to show the window
+	 * @param bgColor the background color of the window
+	 */
+	public void open(String title, int frameX, int frameY, int contentWidth, int contentHeight,
 			GraphicsDevice display, Color bgColor)
 	{
+		open_sys(display, contentWidth, contentHeight, new Point(frameX, frameY), title, bgColor);
+	}
+	
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	private void open_sys(GraphicsDevice display, int contentWidth, int contentHeight,
+			Point framePosition, String title, Color bgColor)
+	{
 		started = true;
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		this.contentWidth = contentW;
-		this.contentHeight = contentH;
 		setBackground(bgColor);
-		openFrame(gc, x, y, title);
+		
+		// Initialize the frame:
+		GraphicsConfiguration gc = display.getDefaultConfiguration();
+		Rectangle displayBounds = gc.getBounds();
+		initFrame(gc);
+		frame.setUndecorated(undecorated);
+		frame.setResizable(resizable);
+		frame.setTitle(title); // if (!undecorated)
+		frame.setLocation(displayBounds.x + framePosition.x, displayBounds.y + framePosition.y);
+		
+		// Allow developers to perform extra actions on the frame.
+		frameInitialized(frame);
+		
+		// Initialize the Processing (PApplet) component:
+		setSize(contentWidth, contentHeight);
+		setPreferredSize(new Dimension(contentWidth, contentHeight));
+		
+		// Initialize the Processing PApplet component:
+		init();
+		
+		// Add the Processing component in the frame and open the frame.
+		frame.add(this);
+		frame.pack();
+		frame.setVisible(true);
 	}
 	
 	// *********************************************************************************************
-	// Methods to open a fullscreen window:
+	// Fullscreen window:
 	// ---------------------------------------------------------------------------------------------
+	
+	/**
+	 * Opens the application in a fullscreen window on the given display. The content will be
+	 * centered in the display.
+	 * 
+	 * @param display the display device on which to show the window
+	 * @param contentWidth the size of the Processing content
+	 * @param contentHeight the size of the Processing content
+	 * @param bgColor the background color of the window
+	 */
+	/**
+	 * @param display
+	 * @param bgColor
+	 */
+	public void openFullscreen(GraphicsDevice display, int contentWidth, int contentHeight,
+			Color bgColor)
+	{
+		openFullscreen_sys(display, contentWidth, contentHeight, bgColor);
+	}
+	
+	/**
+	 * @param displayIndex the index of the display, the primary display has index 0, the second
+	 *            display when present has index 1, etc.
+	 * @param contentWidth the size of the Processing content
+	 * @param contentHeight the size of the Processing content
+	 * @param bgColor the background color of the window
+	 */
+	public void openFullscreen(int displayIndex, int contentWidth, int contentHeight, Color bgColor)
+	{
+		openFullscreen_sys(getDisplay(displayIndex), contentWidth, contentHeight, bgColor);
+	}
+	
+	/**
+	 * Opens the application in a fullscreen window on the given display. The content width and
+	 * height will be set to the width and the height of the display.
+	 * 
+	 * @param display the display device on which to show the window
+	 * @param bgColor the background color of the window
+	 */
+	public void openFullscreen(GraphicsDevice display, Color bgColor) {
+		Rectangle frameBounds = display.getDefaultConfiguration().getBounds();
+		openFullscreen_sys(getDefaultDisplay(), frameBounds.width, frameBounds.height, bgColor);
+	}
+	
+	/**
+	 * Opens the application in a fullscreen window on the display with the given index. The content
+	 * width and height will be set to the width and the height of the display.
+	 * 
+	 * @param displayIndex the index of the display, the primary display has index 0, the second
+	 *            display when present has index 1, etc.
+	 * @param bgColor the background color of the window
+	 */
+	public void openFullscreen(int displayIndex, Color bgColor) {
+		GraphicsDevice display = getDisplay(displayIndex);
+		Rectangle frameBounds = display.getDefaultConfiguration().getBounds();
+		openFullscreen_sys(getDefaultDisplay(), frameBounds.width, frameBounds.height, bgColor);
+	}
+	
+	/**
+	 * Opens the application in a fullscreen window on the primary display. The content will be
+	 * centered in the display.
+	 * 
+	 * @param contentWidth the size of the Processing content
+	 * @param contentHeight the size of the Processing content
+	 * @param bgColor the background color of the window
+	 */
+	public void openFullscreen(int contentWidth, int contentHeight, Color bgColor) {
+		openFullscreen_sys(getDefaultDisplay(), contentWidth, contentHeight, bgColor);
+	}
 	
 	/**
 	 * Opens the application in a fullscreen window on the primary display. The content width and
@@ -346,167 +599,126 @@ public class SGWindow extends SGApp {
 	 * @param bgColor the background color of the window
 	 */
 	public void openFullscreen(Color bgColor) {
-		started = true;
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		GraphicsDevice display = ge.getScreenDevices()[0];
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		initFullscreenStage(gc);
-		setBackground(bgColor);
-		openFullscreenFrame(gc);
+		GraphicsDevice display = getDefaultDisplay();
+		Rectangle frameBounds = display.getDefaultConfiguration().getBounds();
+		openFullscreen_sys(getDefaultDisplay(), frameBounds.width, frameBounds.height, bgColor);
 	}
 	
-	/**
-	 * Opens the application in a fullscreen window on the display with the given index. The content
-	 * width and height will be set to the width and the height of the display.
-	 * 
-	 * @param bgColor the background color of the window
-	 * @param displayIndex the index of the display, the primary display has index 0, the second
-	 *            display when present has index 1, etc.
-	 */
-	public void openFullscreen(Color bgColor, int displayIndex) {
-		started = true;
-		GraphicsDevice display = getDisplay(displayIndex);
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		initFullscreenStage(gc);
-		setBackground(bgColor);
-		openFullscreenFrame(gc);
-	}
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
-	/**
-	 * Opens the application in a fullscreen window on the given display. The content width and
-	 * height will be set to the width and the height of the display.
-	 * 
-	 * @param bgColor the background color of the window
-	 * @param display the representation of the display device on which to show the window
-	 */
-	public void openFullscreen(Color bgColor, GraphicsDevice display) {
+	private void openFullscreen_sys(GraphicsDevice display, int contentWidth, int contentHeight,
+			Color bgColor)
+	{
 		started = true;
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		initFullscreenStage(gc);
 		setBackground(bgColor);
-		openFullscreenFrame(gc);
-	}
-	
-	/**
-	 * Opens the application in a fullscreen window on the primary display. The content will be
-	 * centered in the display.
-	 * 
-	 * @param contentW the width of the window content
-	 * @param contentH the height of the windows content
-	 * @param bgColor the background color of the window
-	 */
-	public void openFullscreen(int contentW, int contentH, Color bgColor) {
-		started = true;
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		GraphicsDevice display = ge.getScreenDevices()[0];
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		initFullscreenStage(gc);
-		setBackground(bgColor);
-		openFullscreenFrame(gc);
-	}
-	
-	/**
-	 * Opens the application in a fullscreen window on the display with the given index. The content
-	 * will be centered in the display.
-	 * 
-	 * @param contentW the width of the window content
-	 * @param contentH the height of the windows content
-	 * @param bgColor the background color of the window
-	 * @param displayIndex the index of the display, the primary display has index 0, the second
-	 *            display when present has index 1, etc.
-	 */
-	public void openFullscreen(int contentW, int contentH, Color bgColor, int displayIndex) {
-		started = true;
-		GraphicsDevice display = getDisplay(displayIndex);
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		initStage(gc, contentW, contentH);
-		setBackground(bgColor);
-		openFullscreenFrame(gc);
 		
+		if (fullscreenMode == FullscreenMode.FULLSCREEN_EXCLUSIVE
+				&& !display.isFullScreenSupported())
+		{
+			logger.warning("The exclusive fullscreen mode is not supported. Using windowed"
+					+ " fullscreen mode instead.");
+			fullscreenMode = FullscreenMode.FULLSCREEN_WINDOWED;
+		}
+		
+		// Set the stage position when the size of the content does not correspond with the size
+		// of the frame:
+		Rectangle frameBounds = display.getDefaultConfiguration().getBounds();
+		if (frameBounds.width != contentWidth || frameBounds.height != contentHeight) {
+			getStage().moveTo((frameBounds.width - contentWidth) / 2,
+					(frameBounds.height - contentHeight) / 2);
+		}
+		
+		// Initialize the frame:
+		initFrame(display.getDefaultConfiguration());
+		frame.setUndecorated(true);
+		frame.setResizable(false);
+		frame.setLocation(frameBounds.x, frameBounds.y);
+		
+		// Allow developers to perform extra actions on the frame.
+		frameInitialized(frame);
+		dispatchFrameInitialized();
+		
+		// Initialize the Processing (PApplet) component:
+		setSize(contentWidth, contentHeight);
+		setPreferredSize(new Dimension(contentWidth, contentHeight));
+		
+		// Initialize the Processing PApplet component:
+		init();
+		
+		// Add the Processing component in the frame and open the frame.
+		frame.add(this);
+		
+		// Open the frame:
+		if (fullscreenMode == FullscreenMode.FULLSCREEN_WINDOWED) {
+			frame.pack();
+			frame.setBounds(display.getDefaultConfiguration().getBounds());
+			frame.setVisible(true);
+		}
+		else if (fullscreenMode == FullscreenMode.FULLSCREEN_EXCLUSIVE) {
+			exclusiveFullscreenActive = true;
+			exclusiveFullscreenDisplay = display;
+			display.setFullScreenWindow(frame);
+		}
 	}
 	
 	/**
-	 * Opens the application in a fullscreen window on the given display. The content will be
-	 * centered in the display.
+	 * A Processing mouse event handler. This handler is installed in debugging mode. It closes the
+	 * application when the user clicks in the top-left corner of a full-screen window.
 	 * 
-	 * @param contentW the width of the window content
-	 * @param contentH the height of the windows content
-	 * @param bgColor the background color of the window
-	 * @param display the representation of the display device on which to show the window
+	 * @see be.multec.sg.SGApp#mouseEvent(processing.event.MouseEvent)
 	 */
-	public void openFullscreen(int contentW, int contentH, Color bgColor, GraphicsDevice display) {
-		started = true;
-		GraphicsConfiguration gc = display.getDefaultConfiguration();
-		initStage(gc, contentW, contentH);
-		setBackground(bgColor);
-		openFullscreenFrame(gc);
+	@Override
+	public void mouseEvent(MouseEvent event) {
+		if (DEBUG_MODE && event.getAction() == MouseEvent.CLICK && event.getX() < 30
+				&& event.getY() < 30) close();
+		else super.mouseEvent(event);
 	}
 	
-	// ---------------------------------------------------------------------------------------------
-	
 	/**
-	 * Adds the app (which inherits from PApplet) in the frame. This method is called after the
-	 * window was opened. In this default implementation the app will occupy the available space.
-	 * This method can be overridden to embed the scene-graph in a composition with other
-	 * AWT-components.
+	 * Handler of Processing key events.
+	 * 
+	 * @param event
 	 */
-	protected void addSceneGraph(Frame frame, SGWindow app) {
-		frame.add(app);
+	@Override
+	public void keyEvent(KeyEvent event) {
+		if (DEBUG_MODE && event.getAction() == KeyEvent.TYPE && event.getKey() == 'q'
+				&& (event.isControlDown() || event.isMetaDown() || event.isAltDown()))
+		{
+			// System.err.println("! Q typed");
+			close();
+		}
+		else super.keyEvent(event);
 	}
 	
 	// *********************************************************************************************
-	// Private support methods for opening the window:
+	// Shared screen functionality:
 	// ---------------------------------------------------------------------------------------------
 	
-	private void initStage(GraphicsConfiguration gc, int contentWidth, int contentHeight) {
-		contentWidth = contentWidth;
-		contentHeight = contentHeight;
-		if (gc.getBounds().width != contentWidth)
-			stageX = (gc.getBounds().width - contentWidth) / 2;
-		if (gc.getBounds().height != contentHeight)
-			stageY = (gc.getBounds().height - contentHeight) / 2;
-		getStage().moveTo(stageX, stageY);
+	/** @return The underlying Java AWT Frame object. */
+	public Frame getFrame() {
+		return frame;
 	}
 	
-	private void initFullscreenStage(GraphicsConfiguration gc) {
-		contentWidth = gc.getBounds().width;
-		contentHeight = gc.getBounds().height;
+	public static void printDisplaysInfo() {
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		System.out.println("\nDisplays info:");
+		int displayCnt = ge.getScreenDevices().length;
+		System.out.println("- There are " + displayCnt + " displays.");
+		for (int i = 0; i < displayCnt; i++) {
+			GraphicsDevice display = ge.getScreenDevices()[i];
+			GraphicsConfiguration gc = display.getDefaultConfiguration();
+			System.out.println("- Display " + i + ":");
+			printBounds("  - bounds: ", gc.getBounds());
+			System.out.println("  - isFullScreenSupported: " + display.isFullScreenSupported());
+		}
+		System.out.println("- PApplet.useQuartz: " + PApplet.useQuartz);
 	}
 	
-	private void openFullscreenFrame(GraphicsConfiguration gc) {
-		initFrame(gc);
-		frame.setUndecorated(true);
-		frame.setResizable(false);
-		frameInitialized(frame);
-		gc.getDevice().setFullScreenWindow(frame);
-		
-		addSceneGraph(frame, this);
-		
-		init();
-	}
-	
-	private void openFrame(GraphicsConfiguration gc, int x, int y, String title) {
-		initFrame(gc);
-		frame.setUndecorated(undecorated);
-		if (!undecorated) frame.setTitle(title);
-		frame.setResizable(false);
-		frame.setBounds(x, y, contentWidth, contentHeight);
-		frameInitialized(frame);
-		frame.pack();
-		frame.setVisible(true);
-		frame.setBounds(x, y, contentWidth, contentHeight + frame.getInsets().top);
-		
-		addSceneGraph(frame, this);
-		
-		init();
-		
-		smooth(8);
-	}
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
 	private void initFrame(GraphicsConfiguration gc) {
 		final SGWindow app = this; // reference to the app for use in the event handlers
 		frame = new Frame(gc);
-		disposeFrame = true;
 		frame.addWindowListener(new WindowAdapter() {
 			
 			@Override
@@ -546,8 +758,7 @@ public class SGWindow extends SGApp {
 			
 			@Override
 			public void windowClosing(WindowEvent event) {
-				// println(">> " + app.getClassName() + " -> windowClosing() - closing: " +
-				// closing);
+				// println(">> " + app.getClassName() + " -> windowClosing()");
 				boolean close = app.windowClosing();
 				app.dispatchWindowClosing();
 				if (close) app.dispose();
@@ -556,15 +767,33 @@ public class SGWindow extends SGApp {
 			@Override
 			public void windowClosed(WindowEvent e) {
 				// println(">> " + app.getClassName() + " -> windowClosed()");
-				app.windowClosed();
 				app.dispatchWindowClosed();
 				app.handlers.clear();
+				app.windowClosed();
+				if (exitOnClose) System.exit(0);
 			}
 		});
 	}
 	
+	/* Checks if the given display index is correct. */
+	private GraphicsDevice getDisplay(int displayIndex) {
+		if (displayIndex < 0)
+			throw new RuntimeException("The given displayIndex " + displayIndex
+					+ " should be at least 0.");
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		GraphicsDevice devices[] = ge.getScreenDevices();
+		if (displayIndex >= devices.length)
+			throw new RuntimeException("The given displayIndex " + displayIndex
+					+ " can be at most " + (devices.length - 1));
+		return devices[displayIndex];
+	}
+	
+	private GraphicsDevice getDefaultDisplay() {
+		return GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+	}
+	
 	// *********************************************************************************************
-	// Window delegate methods:
+	// Window accessors and delegate methods:
 	// ---------------------------------------------------------------------------------------------
 	// TODO: consider implementing additional Window delegate methods
 	
@@ -587,58 +816,6 @@ public class SGWindow extends SGApp {
 	public void setTitle(String title) {
 		this.title = title;
 		if (frame != null) frame.setTitle(title);
-	}
-	
-	/**
-	 * Indicates whether this frame is resizable by the user. By default, all frames are initially
-	 * resizable.
-	 * 
-	 * @return true if the user can resize this frame; false otherwise.
-	 */
-	public boolean isResizable() {
-		return resizable;
-	}
-	
-	/**
-	 * Sets whether this frame is resizable by the user.
-	 * 
-	 * @param resizable true if this frame is resizable; false otherwise.
-	 */
-	public void setResizable(boolean resizable) {
-		if (this.resizable == resizable) return;
-		this.resizable = resizable;
-		if (frame != null) frame.setResizable(resizable);
-	}
-	
-	/**
-	 * Set this value before opening the window. Setting this value to true can be used to mimic a
-	 * fullscreen window while opening a regular window.
-	 * 
-	 * @param undecorated
-	 * 
-	 * @see Frame#setUndecorated(boolean)
-	 */
-	public void setUndecorated(boolean undecorated) {
-		if (this.undecorated == undecorated) return;
-		this.undecorated = undecorated;
-		if (frame != null) frame.setUndecorated(undecorated);
-	}
-	
-	// *********************************************************************************************
-	// Private support methods:
-	// ---------------------------------------------------------------------------------------------
-	
-	/* Checks if the given display index is correct. */
-	private GraphicsDevice getDisplay(int displayIndex) {
-		if (displayIndex < 0)
-			throw new RuntimeException("The given displayIndex " + displayIndex
-					+ " should be at least 0.");
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		GraphicsDevice devices[] = ge.getScreenDevices();
-		if (displayIndex >= devices.length)
-			throw new RuntimeException("The given displayIndex " + displayIndex
-					+ " can be at most " + (devices.length - 1));
-		return devices[displayIndex];
 	}
 	
 	// *********************************************************************************************
@@ -771,92 +948,10 @@ public class SGWindow extends SGApp {
 	// PApplet methods:
 	// ---------------------------------------------------------------------------------------------
 	
-	/**
-	 * This method should be called by overriding methods.
-	 * 
-	 * @see processing.core.SGApp#setup()
-	 */
+	/* @see processing.core.PApplet#sketchRenderer() */
 	@Override
-	public void setup() {
-		if (closing) return;
-		size(contentWidth, contentHeight, renderer);
-		super.setup();
-	}
-	
-	/**
-	 * This method should be called by overriding methods.
-	 * 
-	 * @see be.multec.sg.SGApp#draw()
-	 */
-	@Override
-	public void draw() {
-		if (closing) return;
-		super.draw();
-	}
-	
-	// ---------------------------------------------------------------------------------------------
-	// Key event handlers:
-	
-	@Override
-	public void keyTyped(KeyEvent e) {
-		if (closing) return;
-		super.keyTyped(e);
-	}
-	
-	@Override
-	public void keyPressed(KeyEvent e) {
-		if (closing) return;
-		super.keyPressed(e);
-	}
-	
-	@Override
-	public void keyReleased(KeyEvent e) {
-		if (closing) return;
-		super.keyReleased(e);
-	}
-	
-	// *********************************************************************************************
-	// Accessors:
-	// ---------------------------------------------------------------------------------------------
-	
-	/**
-	 * @return True when the application was started.
-	 */
-	public boolean started() {
-		return started;
-	}
-	
-	/** @return The underlying Java AWT Frame object. */
-	public Frame getFrame() {
-		return frame;
-	}
-	
-	/**
-	 * @return the frameContentWidth
-	 */
-	public int getContentWidth() {
-		return contentWidth;
-	}
-	
-	/**
-	 * @return the frameContentHeight
-	 */
-	public int getContentHeight() {
-		return contentHeight;
-	}
-	
-	/**
-	 * @return the stageX
-	 */
-	public int getStageX() {
-		return stageX;
-	}
-	
-	/**
-	 * @param stageX the stageX to set
-	 */
-	public void setStageX(int stageX) {
-		this.stageX = stageX;
+	public String sketchRenderer() {
+		return renderer;
 	}
 	
 	// *********************************************************************************************

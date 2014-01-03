@@ -20,17 +20,17 @@ public class ImageDemo extends SGWindow {
 	
 	public static void main(String[] args) {
 		ImageDemo app = new ImageDemo();
-		app.setRenderer(PConstants.P2D);
+		//app.setRenderer(PConstants.P2D); // OK
 		app.open("ImageDemo", 50, 30, 1050, 408, new Color(0xffcc00));
 	}
 	
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
-	
-	/* @see be.multec.sg.SGApp#setupSG() */
+
+	/* @see processing.core.PApplet#setup() */
 	@Override
-	public void setupSG() {
+	public void setup() {
 		noLoop();
 		
 		Color markerColor = new Color(0xffffff);

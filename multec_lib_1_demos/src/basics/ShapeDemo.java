@@ -2,6 +2,7 @@ package basics;
 
 import java.awt.Color;
 
+import processing.core.PConstants;
 import processing.core.PShape;
 import processing.core.PVector;
 import be.multec.sg.SGApp;
@@ -23,17 +24,17 @@ public class ShapeDemo extends SGWindow {
 	
 	public static void main(String[] args) {
 		ShapeDemo app = new ShapeDemo();
-		// app.setRenderer(PConstants.P2D);
-		app.open("Shape Demo", 50, 30, 900, 900, new Color(0xFFFFFF));
+		//app.setRenderer(PConstants.P2D); // Not OK
+		app.open("Shape Demo", 50, 30, 900, 500, new Color(0xFFFFFF));
 	}
 	
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
-	
-	/* @see be.multec.sg.SGApp#setupSG() */
+
+	/* @see processing.core.PApplet#setup() */
 	@Override
-	public void setupSG() {
+	public void setup() {
 		noLoop();
 		// smooth();
 		

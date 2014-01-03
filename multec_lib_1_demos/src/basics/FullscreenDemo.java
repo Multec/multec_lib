@@ -1,6 +1,11 @@
 package basics;
 
 import java.awt.Color;
+import java.io.IOException;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
@@ -14,23 +19,83 @@ import be.multec.sg.modifiers.IModifier;
 public class FullscreenDemo extends SGWindow {
 	
 	// *********************************************************************************************
+	// Attributes:
+	// ---------------------------------------------------------------------------------------------
+	
+	public static Logger LOG = Logger.getLogger("FullscreenDemo");
+	
+	// *********************************************************************************************
 	// main():
 	// ---------------------------------------------------------------------------------------------
 	
 	public static void main(String[] args) {
-		FullscreenDemo app = new FullscreenDemo();
+		
+		
+		LOG.setLevel(Level.INFO);
+		
+		FileHandler fh = null;
+		try {
+			fh = new FileHandler("FullscreenDemo.log");
+			LOG.addHandler(fh);
+			SimpleFormatter formatter = new SimpleFormatter();
+			fh.setFormatter(formatter);
+			
+			LOG.info("Launching FullscreenDemo");
+		}
+		catch (SecurityException e) {
+			e.printStackTrace();
+			return;
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
+
+		final FullscreenDemo app = new FullscreenDemo();
+		
+		try {
+			//open_1(app); // OK
+			// open_2(app); // Not OK
+			open_3(app); // OK
+			// open_4(app); // Not OK, gets stuck
+		}
+		catch (Throwable e) {
+			LOG.log(Level.SEVERE, "Uncaught exception in main thread. " + e, e);
+			fh.flush();
+			fh.close();
+		}
+		
+	}
+	
+	private static void open_1(FullscreenDemo app) {
+		app.openFullscreen(new Color(0xBE0000));
+	}
+	
+	private static void open_2(FullscreenDemo app) {
+		app.setFullscreenMode(FullscreenMode.FULLSCREEN_EXCLUSIVE);
+		app.openFullscreen(new Color(0xBE0000));
+	}
+	
+	private static void open_3(FullscreenDemo app) {
 		app.setRenderer(P2D);
 		app.openFullscreen(new Color(0xBE0000));
-		// app.open("OpenFullscreen", 50, 50, 1280, 960, 0xBE0000);
+	}
+	
+	private static void open_4(FullscreenDemo app) {
+		app.setFullscreenMode(FullscreenMode.FULLSCREEN_EXCLUSIVE);
+		app.setRenderer(P2D);
+		app.openFullscreen(new Color(0xBE0000));
 	}
 	
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
 	
-	/* @see be.multec.sg.SGApp#setupSG() */
+	private int counter = 0;
+	
+	/* @see processing.core.PApplet#setup() */
 	@Override
-	public void setupSG() {
+	public void setup() {
 		frameRate(30);
 		// noLoop();
 		
@@ -39,6 +104,7 @@ public class FullscreenDemo extends SGWindow {
 			@Override
 			public void apply(SGNode node) {
 				node.rotate(PI / 100);
+				//if (counter++ == 30) throw new Error("TEST");
 			}
 		});
 		n1.addNode(new SGRect(this, 600, 600, new Color(0xFFCC00)), -300, -300);

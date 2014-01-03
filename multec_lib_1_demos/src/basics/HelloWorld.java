@@ -12,6 +12,8 @@ public class HelloWorld extends SGWindow {
 	// ---------------------------------------------------------------------------------------------
 	
 	public static void main(String[] args) {
+		SGWindow.logToFile = true;
+		
 		// Launch the HelloWorld program.
 		HelloWorld app = new HelloWorld();
 		app.setRenderer(P2D);
@@ -27,13 +29,18 @@ public class HelloWorld extends SGWindow {
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
-	
-	/* @see be.multec.sg.SGApp#setupSG() */
+
+	/* @see processing.core.PApplet#setup() */
 	@Override
-	public void setupSG() {
+	public void setup() {
 		label = new SGLabel(this, "Hello world");
 		addNode(label, 50, 70);
-		noLoop();
+	}
+
+	/* @see be.multec.sg.SGWindow#windowClosed() */
+	@Override
+	protected void windowClosed() {
+		System.exit(0);
 	}
 	
 }

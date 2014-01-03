@@ -59,10 +59,10 @@ public class BoundedLabelDemo extends SGWindow {
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
-	
-	/* @see be.multec.sg.SGApp#setupSG() */
+
+	/* @see processing.core.PApplet#setup() */
 	@Override
-	public void setupSG() {
+	public void setup() {
 		noLoop();
 		
 		Color bgColor = new Color(0x77FFFFFF, true);
