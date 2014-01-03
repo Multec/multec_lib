@@ -4,6 +4,8 @@ import java.awt.Rectangle;
 import java.io.File;
 
 import processing.core.PApplet;
+import processing.core.PConstants;
+import processing.core.PGraphics;
 import processing.core.PImage;
 
 /**
@@ -12,7 +14,7 @@ import processing.core.PImage;
  * 
  * @author Wouter Van den Broeck
  */
-public class SGNodeBase {
+public class SGNodeBase implements PConstants {
 	
 	// *********************************************************************************************
 	// Initialization:
@@ -63,8 +65,31 @@ public class SGNodeBase {
 	protected PApplet pa;
 	
 	// *********************************************************************************************
-	// Methods:
+	// Utility methods:
 	// ---------------------------------------------------------------------------------------------
+	
+	/**
+	 * Resets all styles.
+	 */
+	public void resetStyles(PGraphics g) {
+		g.imageMode(CORNER);
+		g.rectMode(CORNER);
+		g.ellipseMode(CENTER);
+		g.shapeMode(CORNER);
+		
+		g.blendMode(BLEND);
+		
+		g.colorMode(RGB, 255);
+
+		g.noTint();
+		g.noFill();
+		g.noStroke();
+		g.strokeWeight(1);
+		g.strokeCap(ROUND);
+		g.strokeJoin(MITER);
+		
+		// TODO: add default text styles
+	}
 	
 	/**
 	 * @param path A path to a file.
