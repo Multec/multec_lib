@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import processing.core.PApplet;
 import processing.core.PConstants;
 import processing.core.PGraphics;
 import processing.core.PMatrix;
@@ -294,7 +293,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/**
 	 * @return The scene-graph application.
 	 */
-	public PApplet getApp() {
+	public SGApp getApp() {
 		return app;
 	}
 	
@@ -368,7 +367,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	/* True when a rotation needs to be applied before drawing this node. */
 	private boolean applyRotate = false;
-
+	
 	/* True when a scaling needs to be applied before drawing this node. */
 	private boolean applyScale = false;
 	
@@ -1175,13 +1174,13 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// ---------------------------------------------------------------------------------------------
 	
 	public boolean drawBounds = false;
-
+	
 	public void drawBounds() {
 		if (this.drawBounds) return;
 		this.drawBounds = true;
 		redraw();
 	}
-
+	
 	public void drawBounds(boolean drawBounds) {
 		if (this.drawBounds == drawBounds) return;
 		this.drawBounds = drawBounds;
