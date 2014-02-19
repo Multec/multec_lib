@@ -1373,14 +1373,22 @@ public class SGNode extends SGNodeBase implements PConstants {
 	}
 	
 	// *********************************************************************************************
-	// Cache:
+	// Bitmap caching:
 	// ---------------------------------------------------------------------------------------------
 	
 	/* The cache. */
 	PGraphics cache;
 	
-	/* True when the (graphics) content of this node is cached in a bitmap image. */
+	/*
+	 * True when the (graphics) content of this node and its children are cached in a bitmap image. 
+	 */
 	private boolean cached = false;
+	
+	/*
+	 * The number parents of this node that are cached. This implies that when this node's content
+	 * is modified, then this cached becomes dirty.
+	 */
+	private int cachedParents = 0;
 	
 	/* True when the cache content is dirty. */
 	private boolean cacheContentDirty = true;
@@ -1407,10 +1415,20 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @default false
 	 */
 	public void setCached(boolean cached) {
-		if (this.cached == cached) return;
-		this.cached = cached;
-		if (cached) cacheContentDirty = true;
-		else clearCache();
+		synchronized (this) {
+			if (this.cached == cached) return;
+			this.cached = cached;
+			if (cached) {
+				cacheContentDirty = true;
+				for (SGNode child : children)
+					child.addCachedParent();
+			}
+			else {
+				for (SGNode child : children)
+					child.removeCachedParent();
+				clearCache();
+			}
+		}
 	}
 	
 	/**
@@ -1418,6 +1436,49 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public void cache() {
 		setCached(true);
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	/* Tells this node that is has an (additional) cached parent. */
+	private void addCachedParent() {
+		synchronized (this) {
+			cachedParents++;
+			for (SGNode child : children)
+				child.addCachedParent();
+		}
+	}
+	
+	/* Tells this node that is has n (additional) cached parents. */
+	private void addCachedParents(int n) {
+		synchronized (this) {
+			cachedParents += n;
+			for (SGNode child : children)
+				child.addCachedParents(n);
+		}
+	}
+	
+	/* Tells this node that is has one less cached parent. */
+	private void removeCachedParent() {
+		synchronized (this) {
+			if (cachedParents == 0)
+				throw new Error("Removing cached parent from node that has no cached parents.");
+			cachedParents--;
+			for (SGNode child : children)
+				child.removeCachedParent();
+		}
+	}
+	
+	/* Tells this node that is has n less cached parents. */
+	private void removeCachedParents(int n) {
+		synchronized (this) {
+			if (cachedParents < n)
+				throw new Error("Removing n cached parent from node that has less than n"
+						+ " cached parents.");
+			cachedParents -= n;
+			for (SGNode child : children)
+				child.removeCachedParents(n);
+		}
 	}
 	
 	// ---------------------------------------------------------------------------------------------
