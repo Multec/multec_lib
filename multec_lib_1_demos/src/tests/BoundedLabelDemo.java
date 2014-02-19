@@ -5,13 +5,13 @@ import java.awt.Rectangle;
 
 import processing.core.PGraphics;
 import be.multec.sg.SGApp;
-import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
-import be.multec.sg.d2.SGLabel;
-import be.multec.sg.d2.SGLabel.HAlignMode;
-import be.multec.sg.d2.SGLabel.SGLabelMode;
-import be.multec.sg.d2.SGLabel.VAlignMode;
-import be.multec.sg.modifiers.IModifier;
+import be.multec.sg.nodes.SGLabel;
+import be.multec.sg.nodes.SGNode;
+import be.multec.sg.nodes.SGLabel.HAlignMode;
+import be.multec.sg.nodes.SGLabel.SGLabelMode;
+import be.multec.sg.nodes.SGLabel.VAlignMode;
+import be.multec.sg.nodes.controllers.INodeController;
 import be.multec.sg.styles.ILabelStyles;
 import be.multec.sg.styles.SGLabelStyles;
 
@@ -291,7 +291,7 @@ public class BoundedLabelDemo extends SGWindow {
 		public Outlined(SGApp app, SGNode node) {
 			super(app);
 			addNode(node);
-			addModifier(new IModifier() {
+			addController(new INodeController() {
 				@Override
 				public void apply(SGNode node) {
 					node.redraw();

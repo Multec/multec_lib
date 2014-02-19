@@ -1,6 +1,8 @@
-package be.multec.sg;
+package be.multec.sg.nodes;
 
 import java.awt.Rectangle;
+
+import be.multec.sg.SGApp;
 
 /**
  * @author Wouter Van den Broeck

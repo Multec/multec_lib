@@ -2,16 +2,15 @@ package basics;
 
 import java.awt.Color;
 
-import processing.core.PConstants;
 import processing.core.PShape;
 import processing.core.PVector;
 import be.multec.sg.SGApp;
-import be.multec.sg.SGMouseEventHandler;
-import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
-import be.multec.sg.d2.SGRect;
-import be.multec.sg.d2.SGShape;
-import be.multec.sg.d2.SGShape.Position;
+import be.multec.sg.eventHandlers.SGMouseEventHandler;
+import be.multec.sg.nodes.SGNode;
+import be.multec.sg.nodes.SGRect;
+import be.multec.sg.nodes.SGShape;
+import be.multec.sg.nodes.SGShape.Position;
 
 /**
  * @author Wouter Van den Broeck
@@ -24,14 +23,14 @@ public class ShapeDemo extends SGWindow {
 	
 	public static void main(String[] args) {
 		ShapeDemo app = new ShapeDemo();
-		//app.setRenderer(PConstants.P2D); // Not OK
+		// app.setRenderer(PConstants.P2D); // Not OK
 		app.open("Shape Demo", 50, 30, 900, 500, new Color(0xFFFFFF));
 	}
 	
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
-
+	
 	/* @see processing.core.PApplet#setup() */
 	@Override
 	public void setup() {
@@ -145,9 +144,8 @@ public class ShapeDemo extends SGWindow {
 		private void init() {
 			addMouseEventHandler(new SGMouseEventHandler() {
 				
-				/* @see be.multec.sg.SGMouseEventHandler#mouseOver(be.multec.sg.SGNode) */
 				@Override
-				protected void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
+				public void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
 					// System.out.println("OVER");
 					SGShape shape = (SGShape) node;
 					shape.fill(new Color(0xBE0000));
@@ -155,9 +153,8 @@ public class ShapeDemo extends SGWindow {
 					shape.strokeWeight(20);
 				}
 				
-				/* @see be.multec.sg.SGMouseEventHandler#mouseOut(be.multec.sg.SGNode) */
 				@Override
-				protected void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
+				public void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
 					// System.out.println("OUT");
 					// ((SGFigure) node).fill(new Color(0));
 					((SGShape) node).useShapeStyles();
@@ -180,16 +177,14 @@ public class ShapeDemo extends SGWindow {
 		private void init() {
 			addMouseEventHandler(new SGMouseEventHandler() {
 				
-				/* @see be.multec.sg.SGMouseEventHandler#mouseOver(be.multec.sg.SGNode) */
 				@Override
-				protected void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
+				public void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
 					// System.out.println("OVER");
 					((SGShape) node).fill(new Color(0));
 				}
 				
-				/* @see be.multec.sg.SGMouseEventHandler#mouseOut(be.multec.sg.SGNode) */
 				@Override
-				protected void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
+				public void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
 					// System.out.println("OUT");
 					((SGShape) node).useShapeStyles();
 				}
@@ -212,16 +207,14 @@ public class ShapeDemo extends SGWindow {
 			fill(outColor);
 			addMouseEventHandler(new SGMouseEventHandler() {
 				
-				/* @see be.multec.sg.SGMouseEventHandler#mouseOver(be.multec.sg.SGNode) */
 				@Override
-				protected void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
+				public void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
 					// System.out.println("OVER");
 					((SGShape) node).fill(overColor);
 				}
 				
-				/* @see be.multec.sg.SGMouseEventHandler#mouseOut(be.multec.sg.SGNode) */
 				@Override
-				protected void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
+				public void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
 					// System.out.println("OUT");
 					((SGShape) node).fill(outColor);
 				}

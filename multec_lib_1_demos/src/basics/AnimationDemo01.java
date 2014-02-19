@@ -3,11 +3,11 @@ package basics;
 import java.awt.Color;
 
 import be.multec.sg.SGApp;
-import be.multec.sg.SGFigure;
-import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
-import be.multec.sg.d2.SGEllipse;
-import be.multec.sg.modifiers.IModifier;
+import be.multec.sg.nodes.SGEllipse;
+import be.multec.sg.nodes.SGFigure;
+import be.multec.sg.nodes.SGNode;
+import be.multec.sg.nodes.controllers.INodeController;
 
 public class AnimationDemo01 extends SGWindow {
 	
@@ -59,7 +59,7 @@ public class AnimationDemo01 extends SGWindow {
 			SGEllipse ce = new SGEllipse(app, diam, diam, fgColor);
 			addNode(ce, 0, 0);
 			
-			ce.addModifier(new IModifier() {
+			ce.addController(new INodeController() {
 				@Override
 				public void apply(SGNode node) {
 					rotate(animAngle);

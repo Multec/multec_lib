@@ -1,4 +1,4 @@
-package be.multec.sg.d2;
+package be.multec.sg.nodes;
 
 import java.awt.Color;
 
@@ -6,8 +6,7 @@ import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.core.PVector;
 import be.multec.sg.SGApp;
-import be.multec.sg.SGMouseEventHandler;
-import be.multec.sg.SGNode;
+import be.multec.sg.eventHandlers.SGMouseEventHandler;
 
 /**
  * A node that includes a button. Mouse events can be captured by overriding the appropriate methods
@@ -98,13 +97,13 @@ public class SGButton extends SGRect {
 			
 			/* @see be.multec.sg.SGMouseEventHandler#mouseOver(be.multec.sg.SGNode) */
 			@Override
-			protected void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
+			public void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {
 				fill(overColor);
 			}
 			
 			/* @see be.multec.sg.SGMouseEventHandler#mouseOut(be.multec.sg.SGNode) */
 			@Override
-			protected void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
+			public void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {
 				fill(outColor);
 			}
 			
@@ -133,7 +132,7 @@ public class SGButton extends SGRect {
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	/* @see be.multec.sg.d2.SGRect#draw(processing.core.PGraphics) */
+	/* @see be.multec.sg.nodes.SGRect#draw(processing.core.PGraphics) */
 	@Override
 	protected void draw(PGraphics g) {
 		super.draw(g);

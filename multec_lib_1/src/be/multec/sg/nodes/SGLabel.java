@@ -1,4 +1,4 @@
-package be.multec.sg.d2;
+package be.multec.sg.nodes;
 
 import java.awt.Color;
 import java.awt.Rectangle;
@@ -9,7 +9,6 @@ import processing.core.PGraphics;
 import be.multec.languages.IMLStringUpdateHandler;
 import be.multec.languages.MLString;
 import be.multec.sg.SGApp;
-import be.multec.sg.SGNode;
 import be.multec.sg.styles.ILabelStyles;
 
 /**
@@ -930,7 +929,7 @@ public class SGLabel extends SGNode implements IMLStringUpdateHandler {
 	// SGApp methods:
 	// ---------------------------------------------------------------------------------------------
 	
-	/* @see be.multec.sg.d2.SG2DNode#draw(processing.core.PGraphics) */
+	/* @see be.multec.sg.nodes.SG2DNode#draw(processing.core.PGraphics) */
 	@Override
 	protected void draw(PGraphics g) {
 		if (disposed) return;

@@ -1,4 +1,4 @@
-package be.multec.sg.d2;
+package be.multec.sg.nodes;
 
 import java.awt.Color;
 import java.awt.Rectangle;
@@ -6,7 +6,6 @@ import java.awt.Rectangle;
 import processing.core.PGraphics;
 import processing.core.PShape;
 import be.multec.sg.SGApp;
-import be.multec.sg.SGFigure;
 
 /**
  * A node that draws a vector shape.
@@ -257,7 +256,7 @@ public class SGShape extends SGFigure {
 	// draw implementation:
 	// ---------------------------------------------------------------------------------------------
 	
-	/* @see be.multec.sg.d2.SG2DNode#draw(processing.core.PGraphics) */
+	/* @see be.multec.sg.nodes.SG2DNode#draw(processing.core.PGraphics) */
 	@Override
 	protected void draw(PGraphics g) {
 		

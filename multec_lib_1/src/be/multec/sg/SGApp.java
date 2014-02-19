@@ -15,7 +15,9 @@ import processing.core.PMatrix3D;
 import processing.core.PVector;
 import processing.event.KeyEvent;
 import processing.event.MouseEvent;
-import be.multec.sg.modifiers.IModifier;
+import be.multec.sg.nodes.SGNode;
+import be.multec.sg.nodes.SGStage;
+import be.multec.sg.nodes.controllers.INodeController;
 
 /**
  * Base class for scene-graph applets. These specialized Processing-applets provide a scene-graph
@@ -57,10 +59,24 @@ public class SGApp extends PApplet {
 	private SGStage stage;
 	
 	/* True when the update traversal is active. */
-	boolean updateActive = false;
+	private boolean updateActive = false;
+	
+	/**
+	 * @return True when the update traversal is active.
+	 */
+	public boolean updateActive() {
+		return updateActive;
+	}
 	
 	/* True when the redraw traversal is active. */
-	boolean drawActive = false;
+	private boolean drawActive = false;
+	
+	/**
+	 * @return True when the draw traversal is active.
+	 */
+	public boolean drawActive() {
+		return drawActive;
+	}
 	
 	/* False as long as the PApplet.draw() method was not called for the first time. */
 	private boolean setupComplete = false;
@@ -151,8 +167,8 @@ public class SGApp extends PApplet {
 		
 		// Trigger update traversal when needed:
 		updateActive = true;
-		if (stage.updatePending) {
-			stage.update_sys();
+		if (stage.updatePending()) {
+			stage.updateNode();
 		}
 		updateActive = false;
 		
@@ -164,15 +180,15 @@ public class SGApp extends PApplet {
 			println("+ DRAW - START TRAVERSAL for [" + name + "]");
 			// stage.printTree();
 		}
-		if (stage.redrawPending) {
+		if (stage.redrawPending()) {
 			if (backgroundColor != null) background(backgroundColor.getRGB());
-			stage.draw_sys(this.g);
+			stage.drawNode(this.g);
 		}
 		drawActive = false;
 		if (traceDrawTrav) println("+ DRAW - END TRAVERSAL for [" + name + "]");
 		applyEnqueuedRedraws();
 		
-		if (!stage.updatePending && !stage.redrawPending) noLoop();
+		if (!stage.updatePending() && !stage.redrawPending()) noLoop();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -204,18 +220,38 @@ public class SGApp extends PApplet {
 		}
 	}
 	
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	// Redraw scheduling:
+	// *********************************************************************************************
+	// Delayed controller application:
+	// ---------------------------------------------------------------------------------------------
 	
+	/* Timer for scheduled controllers. */
 	private Timer scheduledUpdateTimer = new Timer();
 	
+	/*
+	 * Synchronization lock used when adding DueUpdate objects that are ready to be applied in the
+	 * dueUpdates collection, and removing them when they are applied.
+	 */
 	private Object dueUpdatesLock = new Object();
 	
+	/* Collection of controllers scheduled for delayed application, wrapped in a DueUpdate objects. */
 	private DueUpdate[] dueUpdates;
 	
-	public void scheduleUpdate(int delay, final SGNode target, final IModifier modifier) {
+	// ---------------------------------------------------------------------------------------------
+	
+	/**
+	 * Utility method for registering a node controller that needs to be applied after a certain
+	 * delay.
+	 * 
+	 * TODO: rename to delayController
+	 * 
+	 * @param delay The delay in milliseconds.
+	 * @param target The node on which the controller needs to be applied.
+	 * @param controller The controller that needs to be applied on the given node after the given
+	 *            delay.
+	 */
+	public void scheduleUpdate(int delay, final SGNode target, final INodeController controller) {
 		// println(">> SGApp.scheduleUpdate() - target: " + target.name);
-		final DueUpdate dueUpdate = new DueUpdate(target, modifier);
+		final DueUpdate dueUpdate = new DueUpdate(target, controller);
 		TimerTask task = new TimerTask() {
 			@Override
 			public void run() {
@@ -223,7 +259,7 @@ public class SGApp extends PApplet {
 				synchronized (dueUpdatesLock) {
 					if (dueUpdates == null) {
 						dueUpdates = new DueUpdate[] { dueUpdate };
-						stage.invalidateUpdate();
+						stage.invalidateNode();
 						loop();
 					}
 					else {
@@ -238,17 +274,21 @@ public class SGApp extends PApplet {
 		scheduledUpdateTimer.schedule(task, delay);
 	}
 	
+	/**
+	 * A system class that wraps a controller scheduled for delayed application and the node on
+	 * which it needs to be applied.
+	 */
 	private class DueUpdate {
 		private SGNode target;
-		private IModifier modifier;
+		private INodeController controller;
 		
-		public DueUpdate(SGNode target, IModifier modifier) {
+		public DueUpdate(SGNode target, INodeController controller) {
 			this.target = target;
-			this.modifier = modifier;
+			this.controller = controller;
 		}
 		
 		public void apply() {
-			modifier.apply(target);
+			controller.apply(target);
 		}
 	}
 	
@@ -308,7 +348,7 @@ public class SGApp extends PApplet {
 	 * @param event
 	 */
 	public void mouseEvent(MouseEvent event) {
-		if (!stage.wantsSysMouseEvents) return;
+		if (!stage.wantsSysMouseEvents()) return;
 		
 		int x = event.getX();
 		int y = event.getY();
@@ -321,8 +361,9 @@ public class SGApp extends PApplet {
 				// TODO: dispatch enter event
 				break;
 			case MouseEvent.EXIT:
-				if (SGNode.currentOverNode != null && SGNode.currentOverNode.wantsSysMouseEvents)
-					SGNode.currentOverNode.dispatchMouseOut();
+				if (SGNode.getCurrentOverNode() != null
+						&& SGNode.getCurrentOverNode().wantsSysMouseEvents())
+					SGNode.getCurrentOverNode().dispatchMouseOut();
 				// TODO: dispatch exit event
 				break;
 			case MouseEvent.PRESS:
@@ -330,31 +371,31 @@ public class SGApp extends PApplet {
 				// touches the window while it was out of system focus (on Mac OS X at least).
 				mouseX = x;
 				mouseY = y;
-				stage.mousePressed_sys(event);
+				stage.processMousePressed(event);
 				break;
 			case MouseEvent.RELEASE:
 				// Manually set the mouseX & mouseY because this is not yet done when the mouse
 				// touches the window while it was out of system focus (on Mac OS X at least).
 				mouseX = x;
 				mouseY = y;
-				stage.mouseReleased_sys(event);
+				stage.processMouseReleased(event);
 				break;
 			case MouseEvent.CLICK:
 				// Manually set the mouseX & mouseY because this is not yet done when the mouse
 				// touches the window while it was out of system focus (on Mac OS X at least).
 				mouseX = x;
 				mouseY = y;
-				stage.mouseClicked_sys(event);
+				stage.processMouseClicked(event);
 				break;
 			case MouseEvent.MOVE:
 				// println(">> SGApp > MOVE - x, y: (" + x + ", " + y + "),  mouseX/Y: (" + mouseX
 				// + ", " + mouseY + ")");
-				stage.mouseMoved_sys(event, false);
+				stage.processMouseMoved(event, false);
 				break;
 			case MouseEvent.DRAG:
 				// println(">> SGApp > DRAG - x, y: (" + x + ", " + y + "),  mouseX/Y: (" + mouseX
 				// + ", " + mouseY + ")");
-				stage.mouseMoved_sys(event, true);
+				stage.processMouseMoved(event, true);
 				break;
 		}
 	}
@@ -370,17 +411,17 @@ public class SGApp extends PApplet {
 	 * @param event
 	 */
 	public void keyEvent(KeyEvent event) {
-		if (!stage.wantsSysKeyEvents) return;
+		if (!stage.wantsSysKeyEvents()) return;
 		
 		switch (event.getAction()) {
 			case KeyEvent.PRESS:
-				stage.keyTyped_sys(event);
+				stage.processKeyTyped(event);
 				break;
 			case KeyEvent.RELEASE:
-				stage.keyPressed_sys(event);
+				stage.processKeyPressed(event);
 				break;
 			case KeyEvent.TYPE:
-				stage.keyReleased_sys(event);
+				stage.processKeyReleased(event);
 				break;
 		}
 	}

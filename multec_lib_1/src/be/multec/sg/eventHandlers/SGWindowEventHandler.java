@@ -1,6 +1,8 @@
-package be.multec.sg;
+package be.multec.sg.eventHandlers;
 
 import java.awt.Frame;
+
+import be.multec.sg.SGApp;
 
 /**
  * An event dispatched by the SGApp class.
@@ -22,23 +24,23 @@ public abstract class SGWindowEventHandler {
 	 * 
 	 * @param frame the underlying Java AWT Frame object
 	 */
-	protected void frameInitialized(Frame frame) {}
+	public void frameInitialized(Frame frame) {}
 	
 	/**
 	 * Called the first time a window is made visible, before the application is started, i.e.
 	 * before the setup() method is called. This method can be overridden.
 	 */
-	protected void windowOpened(SGApp app) {}
+	public void windowOpened(SGApp app) {}
 	
 	/**
 	 * Called when the window becomes the active window.
 	 */
-	protected void windowActivated(SGApp app) {}
+	public void windowActivated(SGApp app) {}
 	
 	/**
 	 * Called when the window is no longer the active window.
 	 */
-	protected void windowDeactivated(SGApp app) {}
+	public void windowDeactivated(SGApp app) {}
 	
 	/**
 	 * Called when the window is changed from a normal to a minimized state. For many platforms, a
@@ -46,12 +48,12 @@ public abstract class SGWindowEventHandler {
 	 * 
 	 * TODO iconImage?
 	 */
-	protected void windowIconified(SGApp app) {}
+	public void windowIconified(SGApp app) {}
 	
 	/**
 	 * Called when the window is changed from a minimized to a normal state.
 	 */
-	protected void windowDeiconified(SGApp app) {}
+	public void windowDeiconified(SGApp app) {}
 	
 	/**
 	 * Called when the user attempts to close the window from the window's close button or from the
@@ -60,13 +62,13 @@ public abstract class SGWindowEventHandler {
 	 * @return true if the window can be effectively close; or false when the user's attempt should
 	 *         be ignored.
 	 */
-	protected boolean windowClosing(SGApp app) {
+	public boolean windowClosing(SGApp app) {
 		return true;
 	}
 	
 	/**
 	 * Called when the window was closed.
 	 */
-	protected void windowClosed(SGApp app) {}
+	public void windowClosed(SGApp app) {}
 	
 }

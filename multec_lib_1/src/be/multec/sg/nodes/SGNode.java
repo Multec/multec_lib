@@ -1,4 +1,4 @@
-package be.multec.sg;
+package be.multec.sg.nodes;
 
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -15,7 +15,10 @@ import processing.core.PMatrix3D;
 import processing.core.PVector;
 import processing.event.KeyEvent;
 import processing.event.MouseEvent;
-import be.multec.sg.modifiers.IModifier;
+import be.multec.sg.SGApp;
+import be.multec.sg.eventHandlers.SGKeyEventHandler;
+import be.multec.sg.eventHandlers.SGMouseEventHandler;
+import be.multec.sg.nodes.controllers.INodeController;
 
 /**
  * Base class for nodes in a scene-graph. Each node can act as a container of child-nodes.
@@ -262,7 +265,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @param explicitWidth the explicit width to set
 	 * @param explicitHeight the explicit height to set
 	 */
-	public void size(float explicitWidth, float explicitHeight) {
+	public void explicitSize(float explicitWidth, float explicitHeight) {
 		if (this.explicitWidth == explicitWidth && this.explicitHeight == explicitHeight) return;
 		this.explicitWidth = explicitWidth;
 		this.explicitHeight = explicitHeight;
@@ -690,7 +693,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			if (addedToSG) child.onAddedToSG();
 			if (child.wantsSysMouseEvents) forwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) forwardKeyEventTo(child);
-			if (child.updatePending && !updatePending) invalidateUpdate();
+			if (child.updatePending && !updatePending) invalidateNode();
 			redraw("SGNode.addNode(SGNode) [" + this + "]"); // always request redraw
 			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
@@ -853,7 +856,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		// println(">> SGNode[" + this.name + "].invalidateLocalBounds()");
 		localBoundsChanged = true;
 		if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
-		if (!updatePending) invalidateUpdate();
+		if (!updatePending) invalidateNode();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -875,7 +878,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		localCompositeBoundsChanged = true;
 		localCompositeBoundsDirty = true;
 		if (!compositeBoundsChanged) invalidateCompositeBounds();
-		if (!updatePending) invalidateUpdate();
+		if (!updatePending) invalidateNode();
 	}
 	
 	/**
@@ -956,7 +959,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			parent.invalidateLocalCompositeBounds();
 		}
 		
-		if (!updatePending) invalidateUpdate();
+		if (!updatePending) invalidateNode();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -1018,31 +1021,31 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// ---------------------------------------------------------------------------------------------
 	
 	/* True when this node needs to be updated. */
-	boolean updatePending = true;
+	private boolean updatePending = true;
 	
 	// ---------------------------------------------------------------------------------------------
 	
 	/** The list of child nodes in this node. */
-	private CopyOnWriteArrayList<IModifier> modifiers;
+	private CopyOnWriteArrayList<INodeController> modifiers;
 	
 	/**
-	 * Add a modifier for this node.
+	 * Add a controller for this node.
 	 * 
-	 * @param modifier
+	 * @param controller
 	 */
-	public void addModifier(IModifier modifier) {
-		if (modifiers == null) modifiers = new CopyOnWriteArrayList<IModifier>();
-		modifiers.add(modifier);
-		if (modifiers.size() == 1 && !updatePending) invalidateUpdate();
+	public void addController(INodeController controller) {
+		if (modifiers == null) modifiers = new CopyOnWriteArrayList<INodeController>();
+		modifiers.add(controller);
+		if (modifiers.size() == 1 && !updatePending) invalidateNode();
 	}
 	
 	/**
-	 * Remove a modifier from this node.
+	 * Remove a controller from this node.
 	 * 
 	 * @param modifier
 	 */
-	public void removeModifier(IModifier modifier) {
-		modifiers.remove(modifier);
+	public void removeController(INodeController controller) {
+		modifiers.remove(controller);
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -1057,13 +1060,13 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/**
 	 * Call this method when this node needs to be updated.
 	 */
-	final protected void invalidateUpdate() {
+	public final void invalidateNode() {
 		// if (updatePending) return;
 		updatePending = true;
 		if (isStage) {
 			if (app != null) app.loop();
 		}
-		else if (parent != null && !parent.updatePending) parent.invalidateUpdate();
+		else if (parent != null && !parent.updatePending) parent.invalidateNode();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -1074,7 +1077,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * 
 	 * @see SGNode#update()
 	 */
-	final protected void update_sys() {
+	final public void updateNode() {
 		boolean trace = false;
 		if (disposed || !updatePending) return;
 		updatePending = false;
@@ -1088,10 +1091,10 @@ public class SGNode extends SGNodeBase implements PConstants {
 		
 		// apply the modifiers:
 		if (modifiers != null && modifiers.size() > 0) {
-			for (IModifier modifier : modifiers) {
+			for (INodeController modifier : modifiers) {
 				modifier.apply(this);
 			}
-			if (modifiers.size() > 0 && !updatePending) invalidateUpdate();
+			if (modifiers.size() > 0 && !updatePending) invalidateNode();
 		}
 		
 		// update local transformation matrix:
@@ -1107,7 +1110,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		// traverse the children, except for cached nodes:
 		if (hasChildren) {
 			for (SGNode child : children) {
-				if (child.visible && child.updatePending) child.update_sys();
+				if (child.visible && child.updatePending) child.updateNode();
 			}
 		}
 		
@@ -1131,12 +1134,12 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// ---------------------------------------------------------------------------------------------
 	
 	/* True when a redraw was requested. */
-	boolean redrawPending = true;
+	private boolean redrawPending = true;
 	
 	/**
 	 * @return True when this node needs to be redrawn in the next update-loop.
 	 */
-	final boolean redrawPending() {
+	final public boolean redrawPending() {
 		return redrawPending;
 	}
 	
@@ -1168,7 +1171,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @see invalidateContentFromUpdate
 	 */
 	public void redraw(String caller) {
-		if (app.drawActive) {
+		if (app.drawActive()) {
 			if (traceRedraw) println("* REDRAW ENQUEUED for [" + name + "] from [" + caller + "]");
 			app.enqueueRedraw(this);
 			return;
@@ -1212,19 +1215,19 @@ public class SGNode extends SGNodeBase implements PConstants {
 		this.drawBounds = drawBounds;
 		redraw();
 	}
-
+	
 	// ---------------------------------------------------------------------------------------------
 	
 	/**
 	 * A system function that applies the transformations, calls the draw() method for this node and
 	 * for its child-nodes. Do not override this method in custom node-classes. Override the draw()
-	 * method instead.
+	 * method instead. This method should only be called from SGApp.
 	 * 
 	 * @see SGNode#draw(processing.core.PGraphics)
 	 */
-	void draw_sys(PGraphics g) {
+	public void drawNode(PGraphics g) {
 		boolean trace = false;
-		if (app.updateActive) throw new Error();
+		if (app.updateActive()) throw new Error();
 		if (!visible || disposed) return;
 		if (trace) println(">> SGNode[" + this + "].draw_sys()");
 		redrawPending = false;
@@ -1253,7 +1256,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 				draw(cache);
 				if (hasChildren) {
 					for (SGNode child : children) {
-						if (child.visible) child.draw_sys(cache);
+						if (child.visible) child.drawNode(cache);
 					}
 				}
 				cache.resetMatrix();
@@ -1279,7 +1282,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			// forward the draw_sys() call to each child:
 			if (hasChildren) {
 				for (SGNode child : children) {
-					if (child.visible) child.draw_sys(g);
+					if (child.visible) child.drawNode(g);
 				}
 			}
 		}
@@ -1514,8 +1517,17 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// Mouse functionality:
 	// ---------------------------------------------------------------------------------------------
 	
-	/* The node over which the mouse currently hovers. */
-	static SGNode currentOverNode;
+	/* The node that is currently under the mouse cursor. */
+	private static SGNode currentOverNode;
+	
+	/**
+	 * @return The node that is currently under the mouse cursor.
+	 */
+	public static SGNode getCurrentOverNode() {
+		return currentOverNode;
+	}
+	
+	// ---------------------------------------------------------------------------------------------
 	
 	/*
 	 * True when at least one mouse-event-handler has been registered on this node using
@@ -1532,7 +1544,14 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/*
 	 * True when this node should receive system-mouse-events. Do not modify this property.
 	 */
-	boolean wantsSysMouseEvents = false;
+	private boolean wantsSysMouseEvents = false;
+	
+	/**
+	 * @return True when this node should receive mouse-events from the system to dispatch further.
+	 */
+	public boolean wantsSysMouseEvents() {
+		return wantsSysMouseEvents;
+	}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
@@ -1621,7 +1640,11 @@ public class SGNode extends SGNodeBase implements PConstants {
 			handler.mouseOut(this, mousePosition, dragged);
 	}
 	
-	void dispatchMouseOut() {
+	/**
+	 * System method that dispatches a mouse-out event to the handlers of this node. This method
+	 * should only be called from SGApp.
+	 */
+	public void dispatchMouseOut() {
 		for (SGMouseEventHandler handler : mouseHandlers)
 			handler.mouseOut(this, getMousePosition(), false);
 	}
@@ -1648,8 +1671,10 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	static boolean traceMClicked = false;
 	
-	/* System method. */
-	void mouseClicked_sys(MouseEvent event) {
+	/**
+	 * System method. This method should only be called from SGApp.
+	 */
+	public void processMouseClicked(MouseEvent event) {
 		boolean trace = false;
 		String tm = null;
 		if (traceMClicked) {
@@ -1669,14 +1694,16 @@ public class SGNode extends SGNodeBase implements PConstants {
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
-				child.mouseClicked_sys(event);
+				child.processMouseClicked(event);
 				if (event.consumed) return;
 			}
 		}
 	}
 	
-	/* System method. */
-	void mousePressed_sys(MouseEvent event) {
+	/**
+	 * System method. This method should only be called from SGApp.
+	 */
+	public void processMousePressed(MouseEvent event) {
 		if (!visible) return;
 		if (dispatchMouseEvents && containsMouse()) {
 			mouseWasPressed = true;
@@ -1688,14 +1715,16 @@ public class SGNode extends SGNodeBase implements PConstants {
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
-				child.mousePressed_sys(event);
+				child.processMousePressed(event);
 				if (event.consumed) return;
 			}
 		}
 	}
 	
-	/* System method. */
-	void mouseReleased_sys(MouseEvent event) {
+	/**
+	 * System method. This method should only be called from SGApp.
+	 */
+	public void processMouseReleased(MouseEvent event) {
 		if (!visible) return;
 		if (dispatchMouseEvents && containsMouse()) {
 			mouseWasPressed = false;
@@ -1707,7 +1736,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
-				child.mouseReleased_sys(event);
+				child.processMouseReleased(event);
 				if (event.consumed) return;
 			}
 		}
@@ -1715,8 +1744,10 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	private boolean traceMMove = false;
 	
-	/* System method. */
-	void mouseMoved_sys(MouseEvent event, boolean dragged) {
+	/**
+	 * System method. This method should only be called from SGApp.
+	 */
+	public void processMouseMoved(MouseEvent event, boolean dragged) {
 		if (!visible) return;
 		if (traceMMove) println(">> " + this + ".mouseMoved_sys() - dragged: " + dragged);
 		if (dispatchMouseEvents) {
@@ -1740,14 +1771,16 @@ public class SGNode extends SGNodeBase implements PConstants {
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
-				child.mouseMoved_sys(event, dragged);
+				child.processMouseMoved(event, dragged);
 				if (event.consumed) return;
 			}
 		}
 	}
 	
-	/* System method. */
-	void mouseWheel_sys(MouseEvent event) {
+	/**
+	 * System method. This method should only be called from SGApp.
+	 */
+	void processMouseWheel(MouseEvent event) {
 		// TODO
 	}
 	
@@ -1806,7 +1839,16 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/*
 	 * True when this node should receive system-key-events. Do not modify this property.
 	 */
-	boolean wantsSysKeyEvents = false;
+	private boolean wantsSysKeyEvents = false;
+	
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+	
+	/**
+	 * @return True when this node should receive system-key-events. Do not modify this property.
+	 */
+	public boolean wantsSysKeyEvents() {
+		return wantsSysKeyEvents;
+	}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
@@ -1867,30 +1909,36 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// ---------------------------------------------------------------------------------------------
 	// system key methods:
 	
-	/* System method. */
-	void keyTyped_sys(KeyEvent event) {
+	/**
+	 * System method. This method should only be called from SGApp.
+	 */
+	public void processKeyTyped(KeyEvent event) {
 		if (dispatchKeyEvents) dispatchKeyTyped(event);
 		if (forwardSysKeyEvents) {
 			for (SGNode child : keyChildren)
-				if (child.visible) child.keyTyped_sys(event);
+				if (child.visible) child.processKeyTyped(event);
 		}
 	}
 	
-	/* System method. */
-	void keyPressed_sys(KeyEvent event) {
+	/**
+	 * System method. This method should only be called from SGApp.
+	 */
+	public void processKeyPressed(KeyEvent event) {
 		if (dispatchKeyEvents) dispatchKeyPressed(event);
 		if (forwardSysKeyEvents) {
 			for (SGNode child : keyChildren)
-				if (child.visible) child.keyPressed_sys(event);
+				if (child.visible) child.processKeyPressed(event);
 		}
 	}
 	
-	/* System method. */
-	void keyReleased_sys(KeyEvent event) {
+	/**
+	 * System method. This method should only be called from SGApp.
+	 */
+	public void processKeyReleased(KeyEvent event) {
 		if (dispatchKeyEvents) dispatchKeyReleased(event);
 		if (forwardSysKeyEvents) {
 			for (SGNode child : keyChildren)
-				if (child.visible) child.keyReleased_sys(event);
+				if (child.visible) child.processKeyReleased(event);
 		}
 	}
 	
@@ -1951,7 +1999,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	}
 	
 	public void checkTree() {
-		boolean stageRedrawPending = app.getStage().redrawPending;
+		boolean stageRedrawPending = app.getStage().redrawPending();
 		CheckTreeState state = new CheckTreeState();
 		if (!stageRedrawPending) checkTreeRec(app.getStage(), state);
 		if (state.stagePendingError) {

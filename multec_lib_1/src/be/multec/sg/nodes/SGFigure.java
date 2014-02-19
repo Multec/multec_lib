@@ -1,9 +1,10 @@
-package be.multec.sg;
+package be.multec.sg.nodes;
 
 import java.awt.Color;
 
 import processing.core.PApplet;
 import processing.core.PGraphics;
+import be.multec.sg.SGApp;
 
 /**
  * A SGFigure is an SGNode that has appearance properties such as a fill color, a stroke color, a
@@ -233,8 +234,8 @@ abstract public class SGFigure extends SGNode {
 	
 	/* @see be.multec.sg.SGNode#draw_sys(processing.core.PGraphics) */
 	@Override
-	protected void draw_sys(PGraphics g) {
-		// println(">> SG2DFigure.draw_sys() - this: " + this);
+	public void drawNode(PGraphics g) {
+		// println(">> SGFigure.drawNode() - this: " + this);
 		
 		g.pushStyle();
 		
@@ -249,8 +250,8 @@ abstract public class SGFigure extends SGNode {
 		
 		g.blendMode(blendMode);
 		
-		super.draw_sys(g);
-
+		super.drawNode(g);
+		
 		g.popStyle();
 	}
 	

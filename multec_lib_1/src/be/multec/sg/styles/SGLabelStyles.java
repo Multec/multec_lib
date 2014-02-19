@@ -3,10 +3,10 @@ package be.multec.sg.styles;
 import java.awt.Color;
 
 import processing.core.PFont;
-import be.multec.sg.d2.SGLabel;
-import be.multec.sg.d2.SGLabel.HAlignMode;
-import be.multec.sg.d2.SGLabel.SGLabelMode;
-import be.multec.sg.d2.SGLabel.VAlignMode;
+import be.multec.sg.nodes.SGLabel;
+import be.multec.sg.nodes.SGLabel.HAlignMode;
+import be.multec.sg.nodes.SGLabel.SGLabelMode;
+import be.multec.sg.nodes.SGLabel.VAlignMode;
 
 /**
  * Base implementation of the ILabelStyle interface.
@@ -116,7 +116,7 @@ public class SGLabelStyles implements ILabelStyles {
 		return labelMode;
 	}
 	
-	/* @see be.multec.sg.styles.ILabelStyle#setLabelMode(be.multec.sg.d2.SGLabel.SGLabelMode) */
+	/* @see be.multec.sg.styles.ILabelStyle#setLabelMode(be.multec.sg.nodes.SGLabel.SGLabelMode) */
 	@Override
 	public void setLabelMode(SGLabelMode mode) {
 		this.labelMode = mode;
@@ -130,7 +130,7 @@ public class SGLabelStyles implements ILabelStyles {
 		return hAlignMode;
 	}
 	
-	/* @see be.multec.sg.styles.ILabelStyle#setHAlignMode(be.multec.sg.d2.SGLabel.HAlignMode) */
+	/* @see be.multec.sg.styles.ILabelStyle#setHAlignMode(be.multec.sg.nodes.SGLabel.HAlignMode) */
 	@Override
 	public void setHAlignMode(HAlignMode mode) {
 		this.hAlignMode = mode;
@@ -144,7 +144,7 @@ public class SGLabelStyles implements ILabelStyles {
 		return vAlignMode;
 	}
 	
-	/* @see be.multec.sg.styles.ILabelStyle#setVAlignMode(be.multec.sg.d2.SGLabel.VAlignMode) */
+	/* @see be.multec.sg.styles.ILabelStyle#setVAlignMode(be.multec.sg.nodes.SGLabel.VAlignMode) */
 	@Override
 	public void setVAlignMode(VAlignMode mode) {
 		this.vAlignMode = mode;
@@ -153,8 +153,8 @@ public class SGLabelStyles implements ILabelStyles {
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	
 	/*
-	 * @see be.multec.sg.styles.ILabelStyle#setAlignModes(be.multec.sg.d2.SGLabel.HAlignMode,
-	 * be.multec.sg.d2.SGLabel.VAlignMode)
+	 * @see be.multec.sg.styles.ILabelStyle#setAlignModes(be.multec.sg.nodes.SGLabel.HAlignMode,
+	 * be.multec.sg.nodes.SGLabel.VAlignMode)
 	 */
 	@Override
 	public void setAlignModes(HAlignMode ham, VAlignMode vam) {

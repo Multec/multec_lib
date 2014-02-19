@@ -3,9 +3,9 @@ package be.multec.sg.styles;
 import java.awt.Color;
 
 import processing.core.PFont;
-import be.multec.sg.d2.SGLabel.HAlignMode;
-import be.multec.sg.d2.SGLabel.SGLabelMode;
-import be.multec.sg.d2.SGLabel.VAlignMode;
+import be.multec.sg.nodes.SGLabel.HAlignMode;
+import be.multec.sg.nodes.SGLabel.SGLabelMode;
+import be.multec.sg.nodes.SGLabel.VAlignMode;
 
 /**
  * Interface for classes that provide all the styles for SGLabel nodes.

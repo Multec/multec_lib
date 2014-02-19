@@ -1,4 +1,4 @@
-package be.multec.sg.d2;
+package be.multec.sg.nodes;
 
 import java.awt.Rectangle;
 import java.lang.ref.SoftReference;
@@ -7,7 +7,6 @@ import java.util.HashMap;
 import processing.core.PGraphics;
 import processing.core.PImage;
 import be.multec.sg.SGApp;
-import be.multec.sg.SGNode;
 
 /**
  * A node that draws a bitmap image.
@@ -414,7 +413,7 @@ public class SGImage extends SGNode {
 	// SGNode Methods:
 	// ---------------------------------------------------------------------------------------------
 	
-	/* @see be.multec.sg.d2.SG2DNode#draw(processing.core.PGraphics) */
+	/* @see be.multec.sg.nodes.SG2DNode#draw(processing.core.PGraphics) */
 	@Override
 	protected void draw(PGraphics g) {
 		if (targetImg == null) {

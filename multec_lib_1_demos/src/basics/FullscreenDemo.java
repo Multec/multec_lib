@@ -7,11 +7,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
-import be.multec.sg.d2.SGEllipse;
-import be.multec.sg.d2.SGRect;
-import be.multec.sg.modifiers.IModifier;
+import be.multec.sg.nodes.SGEllipse;
+import be.multec.sg.nodes.SGNode;
+import be.multec.sg.nodes.SGRect;
+import be.multec.sg.nodes.controllers.INodeController;
 
 /**
  * @author Wouter Van den Broeck
@@ -100,7 +100,7 @@ public class FullscreenDemo extends SGWindow {
 		// noLoop();
 		
 		SGNode n1 = new SGNode(this);
-		n1.addModifier(new IModifier() {
+		n1.addController(new INodeController() {
 			@Override
 			public void apply(SGNode node) {
 				node.rotate(PI / 100);

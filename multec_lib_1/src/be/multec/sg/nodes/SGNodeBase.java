@@ -1,4 +1,4 @@
-package be.multec.sg;
+package be.multec.sg.nodes;
 
 import java.awt.Rectangle;
 import java.io.File;
@@ -14,7 +14,7 @@ import processing.core.PImage;
  * 
  * @author Wouter Van den Broeck
  */
-public class SGNodeBase implements PConstants {
+public abstract class SGNodeBase implements PConstants {
 	
 	// *********************************************************************************************
 	// Initialization:
@@ -80,7 +80,7 @@ public class SGNodeBase implements PConstants {
 		g.blendMode(BLEND);
 		
 		g.colorMode(RGB, 255);
-
+		
 		g.noTint();
 		g.noFill();
 		g.noStroke();

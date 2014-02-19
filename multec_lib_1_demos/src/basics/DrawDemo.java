@@ -4,8 +4,8 @@ import java.awt.Color;
 
 import processing.core.PGraphics;
 import be.multec.sg.SGApp;
-import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
+import be.multec.sg.nodes.SGNode;
 
 /**
  * @author Wouter Van den Broeck

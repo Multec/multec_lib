@@ -1,5 +1,6 @@
-package be.multec.sg;
+package be.multec.sg.eventHandlers;
 
+import be.multec.sg.nodes.SGNode;
 import processing.core.PVector;
 
 /**
@@ -21,7 +22,7 @@ public abstract class SGMouseEventHandler {
 	 * @param node The node for which the mouse-event is dispatched.
 	 * @param mousePosition The position of the mouse in the local coordinate system.
 	 */
-	protected void mouseClicked(SGNode node, PVector mousePosition) {}
+	public void mouseClicked(SGNode node, PVector mousePosition) {}
 	
 	/**
 	 * Called when the mouse-button was pressed while the cursor was over this node's shape.
@@ -29,7 +30,7 @@ public abstract class SGMouseEventHandler {
 	 * @param node The node for which the mouse-event is dispatched.
 	 * @param mousePosition The position of the mouse in the local coordinate system.
 	 */
-	protected void mousePressed(SGNode node, PVector mousePosition) {}
+	public void mousePressed(SGNode node, PVector mousePosition) {}
 	
 	/**
 	 * Called when the mouse-button was released after it was pressed while the cursor was over this
@@ -38,7 +39,7 @@ public abstract class SGMouseEventHandler {
 	 * @param node The node for which the mouse-event is dispatched.
 	 * @param mousePosition The position of the mouse in the local coordinate system.
 	 */
-	protected void mouseReleased(SGNode node, PVector mousePosition) {}
+	public void mouseReleased(SGNode node, PVector mousePosition) {}
 	
 	/**
 	 * Called when the cursor moved onto this node's shape.
@@ -47,7 +48,7 @@ public abstract class SGMouseEventHandler {
 	 * @param mousePosition The position of the mouse in the local coordinate system.
 	 * @param dragged True when the mouse-button was pressed while the mouse moved over the node.
 	 */
-	protected void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {}
+	public void mouseOver(SGNode node, PVector mousePosition, boolean dragged) {}
 	
 	/**
 	 * Called when the cursor moved out of this node's shape.
@@ -56,7 +57,7 @@ public abstract class SGMouseEventHandler {
 	 * @param mousePosition The position of the mouse in the local coordinate system.
 	 * @param dragged True when the mouse-button was pressed while the mouse moved over the node.
 	 */
-	protected void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {}
+	public void mouseOut(SGNode node, PVector mousePosition, boolean dragged) {}
 	
 	/**
 	 * Called when the cursor moved over of this node's shape.
@@ -65,6 +66,6 @@ public abstract class SGMouseEventHandler {
 	 * @param mousePosition The position of the mouse in the local coordinate system.
 	 * @param dragged True when the mouse-button was pressed while the mouse moved over the node.
 	 */
-	protected void mouseMoved(SGNode node, PVector mousePosition, boolean dragged) {}
+	public void mouseMoved(SGNode node, PVector mousePosition, boolean dragged) {}
 	
 }

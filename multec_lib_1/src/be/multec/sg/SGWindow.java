@@ -21,6 +21,7 @@ import processing.core.PApplet;
 import processing.core.PConstants;
 import processing.event.KeyEvent;
 import processing.event.MouseEvent;
+import be.multec.sg.eventHandlers.SGWindowEventHandler;
 
 /**
  * Base class for windowed scene-graph applications.

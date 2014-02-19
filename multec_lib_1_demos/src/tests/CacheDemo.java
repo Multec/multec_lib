@@ -4,9 +4,9 @@ import java.awt.Color;
 import java.awt.Rectangle;
 
 import be.multec.sg.SGApp;
-import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
-import be.multec.sg.d2.SGRect;
+import be.multec.sg.nodes.SGNode;
+import be.multec.sg.nodes.SGRect;
 
 /**
  * A demo of the caching functionality.

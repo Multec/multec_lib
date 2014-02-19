@@ -5,12 +5,12 @@ import java.awt.Rectangle;
 
 import processing.core.PGraphics;
 import be.multec.sg.SGApp;
-import be.multec.sg.SGNode;
 import be.multec.sg.SGWindow;
-import be.multec.sg.d2.SGImage;
-import be.multec.sg.d2.SGImage.SGImageMode;
-import be.multec.sg.d2.SGRect;
-import be.multec.sg.modifiers.IModifier;
+import be.multec.sg.nodes.SGImage;
+import be.multec.sg.nodes.SGNode;
+import be.multec.sg.nodes.SGRect;
+import be.multec.sg.nodes.SGImage.SGImageMode;
+import be.multec.sg.nodes.controllers.INodeController;
 
 /**
  * @author Wouter Van den Broeck
@@ -94,7 +94,7 @@ public class BoundedImageDemo extends SGWindow {
 		public Outlined(SGApp app, SGNode node) {
 			super(app);
 			addNode(node);
-			addModifier(new IModifier() {
+			addController(new INodeController() {
 				@Override
 				public void apply(SGNode node) {
 					node.redraw();

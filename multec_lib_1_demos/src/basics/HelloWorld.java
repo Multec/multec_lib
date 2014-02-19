@@ -3,7 +3,7 @@ package basics;
 import java.awt.Color;
 
 import be.multec.sg.SGWindow;
-import be.multec.sg.d2.SGLabel;
+import be.multec.sg.nodes.SGLabel;
 
 public class HelloWorld extends SGWindow {
 	

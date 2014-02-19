@@ -5,9 +5,9 @@ import java.awt.Color;
 import processing.core.PConstants;
 
 import be.multec.sg.SGWindow;
-import be.multec.sg.d2.SGImage;
-import be.multec.sg.d2.SGImage.SGImageMode;
-import be.multec.sg.d2.SGRect;
+import be.multec.sg.nodes.SGImage;
+import be.multec.sg.nodes.SGRect;
+import be.multec.sg.nodes.SGImage.SGImageMode;
 
 /**
  * @author Wouter Van den Broeck

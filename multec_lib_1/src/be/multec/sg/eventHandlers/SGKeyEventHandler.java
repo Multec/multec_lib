@@ -1,5 +1,6 @@
-package be.multec.sg;
+package be.multec.sg.eventHandlers;
 
+import be.multec.sg.nodes.SGNode;
 import processing.event.KeyEvent;
 
 /**
@@ -26,7 +27,7 @@ public abstract class SGKeyEventHandler {
 	 * @param node The node for which the key-event is dispatched.
 	 * @param event The Processing key event.
 	 */
-	protected void keyTyped(SGNode node, KeyEvent event) {}
+	public void keyTyped(SGNode node, KeyEvent event) {}
 	
 	/**
 	 * Called once every time a key is pressed.
@@ -38,7 +39,7 @@ public abstract class SGKeyEventHandler {
 	 * @param node The node for which the key-event is dispatched.
 	 * @param event The Processing key event.
 	 */
-	protected void keyPressed(SGNode node, KeyEvent event) {}
+	public void keyPressed(SGNode node, KeyEvent event) {}
 	
 	/**
 	 * Called once every time a key is released. The key that was released will be stored in the key
@@ -47,6 +48,6 @@ public abstract class SGKeyEventHandler {
 	 * @param node The node for which the key-event is dispatched.
 	 * @param event The Processing key event.
 	 */
-	protected void keyReleased(SGNode node, KeyEvent event) {}
+	public void keyReleased(SGNode node, KeyEvent event) {}
 	
 }
