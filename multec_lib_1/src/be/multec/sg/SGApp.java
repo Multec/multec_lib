@@ -151,13 +151,15 @@ public class SGApp extends PApplet {
 	public void dispose() {
 		stop(); // stop the PApplet animation loop
 		
+		// unregister Processing event-handlers:
 		try {
 			unregisterMethod("mouseEvent", this);
+		}
+		catch (Exception e) { /* ignore */}
+		try {
 			unregisterMethod("keyEvent", this);
 		}
-		catch (Exception e) {
-			// ignore
-		}
+		catch (Exception e) { /* ignore */}
 		
 		if (stage != null) {
 			stage.dispose(true);

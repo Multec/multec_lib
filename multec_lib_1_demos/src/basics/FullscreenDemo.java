@@ -11,7 +11,7 @@ import be.multec.sg.SGWindow;
 import be.multec.sg.nodes.SGEllipse;
 import be.multec.sg.nodes.SGNode;
 import be.multec.sg.nodes.SGRect;
-import be.multec.sg.nodes.controllers.INodeController;
+import be.multec.sg.nodes.controllers.NodeController;
 
 /**
  * @author Wouter Van den Broeck
@@ -29,7 +29,6 @@ public class FullscreenDemo extends SGWindow {
 	// ---------------------------------------------------------------------------------------------
 	
 	public static void main(String[] args) {
-		
 		
 		LOG.setLevel(Level.INFO);
 		
@@ -50,11 +49,11 @@ public class FullscreenDemo extends SGWindow {
 			e.printStackTrace();
 			return;
 		}
-
+		
 		final FullscreenDemo app = new FullscreenDemo();
 		
 		try {
-			//open_1(app); // OK
+			// open_1(app); // OK
 			// open_2(app); // Not OK
 			open_3(app); // OK
 			// open_4(app); // Not OK, gets stuck
@@ -100,11 +99,11 @@ public class FullscreenDemo extends SGWindow {
 		// noLoop();
 		
 		SGNode n1 = new SGNode(this);
-		n1.addController(new INodeController() {
+		n1.setController(new NodeController() {
 			@Override
 			public void apply(SGNode node) {
 				node.rotate(PI / 100);
-				//if (counter++ == 30) throw new Error("TEST");
+				// if (counter++ == 30) throw new Error("TEST");
 			}
 		});
 		n1.addNode(new SGRect(this, 600, 600, new Color(0xFFCC00)), -300, -300);

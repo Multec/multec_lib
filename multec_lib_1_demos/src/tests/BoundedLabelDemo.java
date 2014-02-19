@@ -7,11 +7,11 @@ import processing.core.PGraphics;
 import be.multec.sg.SGApp;
 import be.multec.sg.SGWindow;
 import be.multec.sg.nodes.SGLabel;
-import be.multec.sg.nodes.SGNode;
 import be.multec.sg.nodes.SGLabel.HAlignMode;
 import be.multec.sg.nodes.SGLabel.SGLabelMode;
 import be.multec.sg.nodes.SGLabel.VAlignMode;
-import be.multec.sg.nodes.controllers.INodeController;
+import be.multec.sg.nodes.SGNode;
+import be.multec.sg.nodes.controllers.NodeController;
 import be.multec.sg.styles.ILabelStyles;
 import be.multec.sg.styles.SGLabelStyles;
 
@@ -48,6 +48,7 @@ public class BoundedLabelDemo extends SGWindow {
 			g.line(0, -9, 0, 10);
 			g.line(-9, 0, 10, 0);
 		}
+		
 		/* @see be.multec.sg.SGNode#updateLocalBounds(java.awt.Rectangle) */
 		@Override
 		protected void updateLocalBounds(Rectangle localBounds) {
@@ -59,7 +60,7 @@ public class BoundedLabelDemo extends SGWindow {
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
-
+	
 	/* @see processing.core.PApplet#setup() */
 	@Override
 	public void setup() {
@@ -291,7 +292,7 @@ public class BoundedLabelDemo extends SGWindow {
 		public Outlined(SGApp app, SGNode node) {
 			super(app);
 			addNode(node);
-			addController(new INodeController() {
+			setController(new NodeController() {
 				@Override
 				public void apply(SGNode node) {
 					node.redraw();
@@ -299,7 +300,7 @@ public class BoundedLabelDemo extends SGWindow {
 			});
 		}
 		
-		/* @see be.multec.sg.d2.SGRect#draw(processing.core.PGraphics) */
+		/* @see be.multec.sg.nodes.SGRect#draw(processing.core.PGraphics) */
 		@Override
 		protected void draw(PGraphics g) {
 			Rectangle bounds = getCompositeBounds();

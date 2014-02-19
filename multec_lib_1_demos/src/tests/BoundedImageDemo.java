@@ -7,10 +7,10 @@ import processing.core.PGraphics;
 import be.multec.sg.SGApp;
 import be.multec.sg.SGWindow;
 import be.multec.sg.nodes.SGImage;
+import be.multec.sg.nodes.SGImage.SGImageMode;
 import be.multec.sg.nodes.SGNode;
 import be.multec.sg.nodes.SGRect;
-import be.multec.sg.nodes.SGImage.SGImageMode;
-import be.multec.sg.nodes.controllers.INodeController;
+import be.multec.sg.nodes.controllers.NodeController;
 
 /**
  * @author Wouter Van den Broeck
@@ -28,7 +28,7 @@ public class BoundedImageDemo extends SGWindow {
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
-
+	
 	/* @see processing.core.PApplet#setup() */
 	@Override
 	public void setup() {
@@ -94,7 +94,7 @@ public class BoundedImageDemo extends SGWindow {
 		public Outlined(SGApp app, SGNode node) {
 			super(app);
 			addNode(node);
-			addController(new INodeController() {
+			setController(new NodeController() {
 				@Override
 				public void apply(SGNode node) {
 					node.redraw();
@@ -102,11 +102,11 @@ public class BoundedImageDemo extends SGWindow {
 			});
 		}
 		
-		/* @see be.multec.sg.d2.SGRect#draw(processing.core.PGraphics) */
+		/* @see be.multec.sg.nodes.SGRect#draw(processing.core.PGraphics) */
 		@Override
 		protected void draw(PGraphics g) {
 			Rectangle bounds = getCompositeBounds();
-			 System.out.println("- bounds: " + rectStr(bounds));
+			// System.out.println("- bounds: " + rectStr(bounds));
 			g.noFill();
 			g.stroke(0xFFBE0000);
 			g.strokeWeight(1);

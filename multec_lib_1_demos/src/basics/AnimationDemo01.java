@@ -8,6 +8,7 @@ import be.multec.sg.nodes.SGEllipse;
 import be.multec.sg.nodes.SGFigure;
 import be.multec.sg.nodes.SGNode;
 import be.multec.sg.nodes.controllers.INodeController;
+import be.multec.sg.nodes.controllers.NodeController;
 
 public class AnimationDemo01 extends SGWindow {
 	
@@ -59,7 +60,7 @@ public class AnimationDemo01 extends SGWindow {
 			SGEllipse ce = new SGEllipse(app, diam, diam, fgColor);
 			addNode(ce, 0, 0);
 			
-			ce.addController(new INodeController() {
+			ce.setController(new NodeController() {
 				@Override
 				public void apply(SGNode node) {
 					rotate(animAngle);

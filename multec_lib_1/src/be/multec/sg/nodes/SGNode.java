@@ -1005,27 +1005,28 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	// ---------------------------------------------------------------------------------------------
 	
-	/** The list of child nodes in this node. */
-	private CopyOnWriteArrayList<INodeController> modifiers;
+	/** The controller of this node. You can set a controller to control this shape. */
+	private INodeController controller;
 	
 	/**
 	 * Add a controller for this node.
 	 * 
 	 * @param controller
 	 */
-	public void addController(INodeController controller) {
-		if (modifiers == null) modifiers = new CopyOnWriteArrayList<INodeController>();
-		modifiers.add(controller);
-		if (modifiers.size() == 1 && !updatePending) invalidateNode();
+	public void setController(INodeController controller) {
+		if (this.controller == controller) return;
+		this.controller = controller;
+		controller.added(this);
+		invalidateNode();
 	}
 	
 	/**
-	 * Remove a controller from this node.
+	 * Remove the controller from this node.
 	 * 
 	 * @param modifier
 	 */
-	public void removeController(INodeController controller) {
-		modifiers.remove(controller);
+	public void removeController() {
+		this.controller = null;
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -1100,13 +1101,9 @@ public class SGNode extends SGNodeBase implements PConstants {
 			println(" - compositeBoundsChanged: " + compositeBoundsChanged);
 		}
 		
-		// apply the controllers:
-		if (modifiers != null && modifiers.size() > 0) {
-			for (INodeController modifier : modifiers) {
-				modifier.apply(this);
-			}
-			if (modifiers.size() > 0 && !updatePending) invalidateNode();
-		}
+		// apply the controller:
+		if (controller != null) controller.apply(this);
+		if (controller != null) updatePending = true;
 		
 		// update local transformation matrix:
 		if (localTMatrixDirty) {
@@ -1416,7 +1413,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	PGraphics cache;
 	
 	/*
-	 * True when the (graphics) content of this node and its children are cached in a bitmap image. 
+	 * True when the (graphics) content of this node and its children are cached in a bitmap image.
 	 */
 	private boolean cached = false;
 	

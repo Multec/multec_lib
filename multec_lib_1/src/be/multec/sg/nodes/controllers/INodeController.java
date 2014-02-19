@@ -11,6 +11,13 @@ import be.multec.sg.nodes.SGNode;
 public interface INodeController {
 	
 	/**
+	 * This method is called when this controller is set on a node.
+	 * 
+	 * @param node The node on which this controller was just set.
+	 */
+	void added(SGNode node);
+	
+	/**
 	 * This method is called during the update traversal.
 	 * 
 	 * @param node The node on which this controller should be applied.

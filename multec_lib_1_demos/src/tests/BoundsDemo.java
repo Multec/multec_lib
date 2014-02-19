@@ -3,7 +3,6 @@ package tests;
 import java.awt.Color;
 import java.awt.Rectangle;
 
-import processing.core.PConstants;
 import processing.core.PGraphics;
 import be.multec.sg.SGApp;
 import be.multec.sg.SGWindow;
@@ -13,7 +12,7 @@ import be.multec.sg.nodes.SGNode;
 import be.multec.sg.nodes.SGRect;
 import be.multec.sg.nodes.SGShape;
 import be.multec.sg.nodes.SGShape.Position;
-import be.multec.sg.nodes.controllers.INodeController;
+import be.multec.sg.nodes.controllers.NodeController;
 
 /**
  * A demo of the bounds functionality.
@@ -28,7 +27,7 @@ public class BoundsDemo extends SGWindow {
 	
 	public static void main(String[] args) {
 		BoundsDemo app = new BoundsDemo();
-		//app.setRenderer(PConstants.P2D);
+		// app.setRenderer(PConstants.P2D);
 		app.open("BoundsDemo", 50, 30, 1024, 960, new Color(0xFFFFFF));
 	}
 	
@@ -39,7 +38,7 @@ public class BoundsDemo extends SGWindow {
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
-
+	
 	/* @see processing.core.PApplet#setup() */
 	@Override
 	public void setup() {
@@ -100,7 +99,7 @@ public class BoundsDemo extends SGWindow {
 		public Outlined(SGApp app, SGNode node) {
 			super(app);
 			addNode(node);
-			addController(new INodeController() {
+			setController(new NodeController() {
 				@Override
 				public void apply(SGNode node) {
 					node.redraw();
@@ -108,7 +107,7 @@ public class BoundsDemo extends SGWindow {
 			});
 		}
 		
-		/* @see be.multec.sg.d2.SGRect#draw(processing.core.PGraphics) */
+		/* @see be.multec.sg.nodes.SGRect#draw(processing.core.PGraphics) */
 		@Override
 		protected void draw(PGraphics g) {
 			Rectangle bounds = getCompositeBounds();
@@ -136,7 +135,7 @@ public class BoundsDemo extends SGWindow {
 			n.name = "N1_rect";
 			n.move(-40, -50);
 			addNode(n);
-			addController(new INodeController() {
+			setController(new NodeController() {
 				@Override
 				public void apply(SGNode node) {
 					node.rotate(PI / 200);
@@ -166,7 +165,7 @@ public class BoundsDemo extends SGWindow {
 			addNode(rect);
 			rotate(PI / 4);
 			
-			addController(new INodeController() {
+			setController(new NodeController() {
 				@Override
 				public void apply(SGNode node) {
 					rect.strokeWeight(rect.strokeWeight() + dir * delta);
@@ -201,7 +200,7 @@ public class BoundsDemo extends SGWindow {
 			inner.move(-15, -15);
 			outer.addNode(inner, 35, 5);
 			
-			addController(new INodeController() {
+			setController(new NodeController() {
 				@Override
 				public void apply(SGNode node) {
 					inner.move(0, dir * delta);
@@ -225,7 +224,7 @@ public class BoundsDemo extends SGWindow {
 			
 			addNode(new SGEllipse(app, 60, 100, new Color(0xFFCC00), Color.BLACK, 10), 0, 0);
 			
-			addController(new INodeController() {
+			setController(new NodeController() {
 				@Override
 				public void apply(SGNode node) {
 					node.rotate(PI / 300);
@@ -253,7 +252,7 @@ public class BoundsDemo extends SGWindow {
 			addNode(new SGEllipse(app, 40, 20, c1), 30, -40);
 			addNode(new SGEllipse(app, 40, 20, c1), -30, 40);
 			
-			addController(new INodeController() {
+			setController(new NodeController() {
 				@Override
 				public void apply(SGNode node) {
 					rotate(PI / 250);
