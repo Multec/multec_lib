@@ -118,7 +118,7 @@ public abstract class SGNodeBase implements PConstants {
 	
 	/** @see PApplet#println(String) */
 	protected void println(String v) {
-		PApplet.println(v);
+		PApplet.println(v + " [" + Thread.currentThread().getName() + "]");
 	}
 	
 	/** @see PApplet#println(Boolean) */

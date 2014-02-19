@@ -108,11 +108,10 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public SGNode(SGApp app, float explicitWidth, float explicitHeight) {
 		super(app);
-		nodeCounter++;
 		this.app = app;
 		this.explicitWidth = explicitWidth;
 		this.explicitHeight = explicitHeight;
-		if (name == null) name = makeName(nodeCounter);
+		this.name = makeName(nodeCounter++);
 	}
 	
 	/**
@@ -125,11 +124,10 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public SGNode(SGApp app, float explicitWidth, float explicitHeight, String name) {
 		super(app);
-		nodeCounter++;
 		this.app = app;
 		this.explicitWidth = explicitWidth;
 		this.explicitHeight = explicitHeight;
-		if (name == null) name = makeName(nodeCounter);
+		this.name = name;
 	}
 	
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

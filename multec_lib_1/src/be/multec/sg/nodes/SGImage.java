@@ -186,7 +186,7 @@ public class SGImage extends SGNode {
 	 * @param path The path of the image file.
 	 */
 	public SGImage(SGApp app, String path) {
-		super(app);
+		super(app, "SGImage (" + path +")");
 		initImage(path);
 	}
 	
