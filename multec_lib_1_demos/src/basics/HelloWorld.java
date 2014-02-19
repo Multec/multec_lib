@@ -2,6 +2,7 @@ package basics;
 
 import java.awt.Color;
 
+import be.multec.sg.SGApp;
 import be.multec.sg.SGWindow;
 import be.multec.sg.nodes.SGLabel;
 
@@ -12,7 +13,7 @@ public class HelloWorld extends SGWindow {
 	// ---------------------------------------------------------------------------------------------
 	
 	public static void main(String[] args) {
-		SGWindow.logToFile = true;
+		SGApp.logToFile();
 		
 		// Launch the HelloWorld program.
 		HelloWorld app = new HelloWorld();
@@ -29,14 +30,14 @@ public class HelloWorld extends SGWindow {
 	// *********************************************************************************************
 	// Methods:
 	// ---------------------------------------------------------------------------------------------
-
+	
 	/* @see processing.core.PApplet#setup() */
 	@Override
 	public void setup() {
 		label = new SGLabel(this, "Hello world");
 		addNode(label, 50, 70);
 	}
-
+	
 	/* @see be.multec.sg.SGWindow#windowClosed() */
 	@Override
 	protected void windowClosed() {

@@ -10,12 +10,9 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 import processing.core.PApplet;
 import processing.core.PConstants;
@@ -95,14 +92,7 @@ public class SGWindow extends SGApp {
 	/** The default position of the window. */
 	public static Point DEFAULT_FRAME_POSITION = new Point(50, 30);
 	
-	// ---------------------------------------------------------------------------------------------
-	// Logging
-	
-	public static boolean logToFile = false;
-	
 	public static final Logger logger = Logger.getLogger("SGWindow");
-	
-	private FileHandler loggerFH = null;
 	
 	// ---------------------------------------------------------------------------------------------
 	// Application state:
@@ -276,42 +266,7 @@ public class SGWindow extends SGApp {
 	/** Basic constructor. */
 	public SGWindow() {
 		super();
-		
-		if (logToFile) {
-			try {
-				loggerFH = new FileHandler("SGWindow.log");
-				logger.addHandler(loggerFH);
-				SimpleFormatter formatter = new SimpleFormatter();
-				loggerFH.setFormatter(formatter);
-			}
-			catch (SecurityException e) {
-				System.err.println("Could not setup file handler for logger in SGWindow.");
-				e.printStackTrace(System.err);
-			}
-			catch (IOException e) {
-				System.err.println("Could not setup file handler for logger in SGWindow.");
-				e.printStackTrace(System.err);
-			}
-		}
-		
-		Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-			@Override
-			public void uncaughtException(Thread t, Throwable e) {
-				logger.log(Level.SEVERE,
-						"Uncaught exception in thread '" + t.getName() + "'. " + e, e);
-				loggerFH.flush();
-				// close();
-			}
-		});
-		
 		final SGWindow app = this;
-		
-		// Runtime.getRuntime().addShutdownHook(new Thread() {
-		// @Override
-		// public void run() {
-		// System.out.println(">> ShutdownHook triggered");
-		// }
-		// });
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -364,17 +319,6 @@ public class SGWindow extends SGApp {
 			}
 			catch (Throwable e) {
 				System.err.println("> s5 error" + e);
-			}
-		}
-		
-		if (loggerFH != null) {
-			try {
-				loggerFH.flush();
-				loggerFH.close();
-			}
-			catch (Throwable e) {
-				System.err.println("Failed to flush or close the log file." + e);
-				e.printStackTrace(System.err);
 			}
 		}
 	}

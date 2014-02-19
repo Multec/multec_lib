@@ -2,9 +2,14 @@ package be.multec.sg;
 
 import java.awt.Color;
 import java.awt.Rectangle;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import processing.core.PApplet;
 import processing.core.PConstants;
@@ -47,6 +52,23 @@ public class SGApp extends PApplet {
 	
 	/** Enables the debug mode. Additional checks are performed when this mode is enabled. */
 	public static boolean DEBUG_MODE = false;
+	
+	// ---------------------------------------------------------------------------------------------
+	// Logging
+	
+	private static boolean logToFile = false;
+	
+	/**
+	 * The logger will log to file.
+	 */
+	public static void logToFile() {
+		logToFile = true;
+	}
+	
+	public static final Logger logger = Logger.getLogger("SGApp");
+	
+	/* The file-handler used when logging to file is enabled. */
+	private FileHandler loggerFH = null;
 	
 	// ---------------------------------------------------------------------------------------------
 	
@@ -92,6 +114,32 @@ public class SGApp extends PApplet {
 	public SGApp() {
 		super();
 		
+		if (logToFile) {
+			try {
+				loggerFH = new FileHandler("SGWindow.log");
+				logger.addHandler(loggerFH);
+				SimpleFormatter formatter = new SimpleFormatter();
+				loggerFH.setFormatter(formatter);
+			}
+			catch (SecurityException e) {
+				System.err.println("Could not setup file handler for logger in SGWindow.");
+				e.printStackTrace(System.err);
+			}
+			catch (IOException e) {
+				System.err.println("Could not setup file handler for logger in SGWindow.");
+				e.printStackTrace(System.err);
+			}
+		}
+		
+		Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+			@Override
+			public void uncaughtException(Thread t, Throwable e) {
+				logger.log(Level.SEVERE,
+						"Uncaught exception in thread '" + t.getName() + "'. " + e, e);
+				loggerFH.flush();
+			}
+		});
+		
 		// Intialize the stage (the root of the scene-graph):
 		stage = new SGStage(this);
 		
@@ -119,6 +167,19 @@ public class SGApp extends PApplet {
 			stage.dispose(true);
 			stage = null;
 		}
+		
+		if (loggerFH != null) {
+			try {
+				logger.removeHandler(loggerFH);
+				loggerFH.flush();
+				loggerFH.close();
+			}
+			catch (Throwable e) {
+				System.err.println("Failed to flush or close the log file." + e);
+				e.printStackTrace(System.err);
+			}
+		}
+		
 		super.dispose();
 	}
 	
@@ -177,7 +238,7 @@ public class SGApp extends PApplet {
 		drawActive = true;
 		if (DEBUG_MODE) stage.checkTree();
 		if (traceDrawTrav) {
-			println("+ DRAW - START TRAVERSAL for [" + name + "]");
+		// println("+ DRAW - START TRAVERSAL for [" + name + "]");
 			// stage.printTree();
 		}
 		if (stage.redrawPending()) {
