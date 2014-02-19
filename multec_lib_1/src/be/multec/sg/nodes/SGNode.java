@@ -69,9 +69,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/* True when this node has been disposed. */
 	protected boolean disposed = false;
 	
-	/* True when this node represents 3D content. */
-	protected final boolean is3D = false;
-	
 	// *********************************************************************************************
 	// Constructors:
 	// ---------------------------------------------------------------------------------------------
@@ -324,20 +321,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 		return disposed;
 	}
 	
-	/**
-	 * @return True when this node represents 2D content.
-	 */
-	public boolean is2D() {
-		return !is3D;
-	}
-	
-	/**
-	 * @return True when this node represents 3D content.
-	 */
-	public boolean is3D() {
-		return is3D;
-	}
-	
 	// *********************************************************************************************
 	// Visibility:
 	// ---------------------------------------------------------------------------------------------
@@ -385,10 +368,10 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/* True when a translation needs to be applied before drawing this node. */
 	private boolean applyTranslate = false;
 	
-	/* True when a rotation needs to be applied this node in a 2D-scene-graph. */
+	/* True when a rotation needs to be applied before drawing this node. */
 	private boolean applyRotate = false;
-	
-	/* True when a rotation around the x-axis needs to be applied this node in a 3D-scene-graph. */
+
+	/* True when a scaling needs to be applied before drawing this node. */
 	private boolean applyScale = false;
 	
 	/* True when some transformation needs to be applied before drawing this node. */
@@ -519,27 +502,21 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	/**
 	 * The angle around the z-axis in radians that determines the rotation of the coordinate system
-	 * of this node with respect to the coordinate system of its parent. This property is only
-	 * relevant in 2D-scene-graphs.
+	 * of this node with respect to the coordinate system of its parent.
 	 */
 	private float rotation = 0;
 	
 	/**
-	 * @return The rotation in radians (around the z-axis). Only available in a 2D-scene-graph.
+	 * @return The rotation in radians (around the z-axis).
 	 */
 	public float getRotation() {
-		// if (app.g.is3D()) throw new Error("SGNode.getRotation() used in a" +
-		// " 3D context - node: "
-		// + this.toString());
-		// else return rotation;
 		return rotation;
 	}
 	
 	/**
 	 * Sets the rotation of this node to given angle.
 	 * 
-	 * @param rotation The rotation in radians (around the z-axis). Only available in a
-	 *            2D-scene-graph.
+	 * @param rotation The rotation in radians (around the z-axis).
 	 */
 	public void rotateTo(float angle) {
 		if (this.rotation == angle) return;
@@ -553,7 +530,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * Adds the given angle to the current rotation of this node.
 	 * 
 	 * @param rotation The rotation in radians to add to the current rotation (around the z-axis).
-	 *            Only available in a 2D-scene-graph.
 	 */
 	public void rotate(float angle) {
 		if (angle == 0) return;
@@ -679,7 +655,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 */
 	public SGNode addNode(SGNode child) {
 		// println(">> SGNode[" + this.name + "].addNode()");
-		if (child.is3D) throw new Error("3D content is currently not supported. [" + this + "]");
 		if (child == this) { throw new Error("Trying to add a node to itself for node: " + this); }
 		if (child.addedToSG)
 			throw new Error("SGNode.addNode(SGNode) was" + " called (on " + this
@@ -949,7 +924,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @param local Should be true when the local bounds should be invalidated too.
 	 */
 	protected void invalidateCompositeBounds() {
-		// if (is3D) throw new Error("3D content is currently not supported. [" + this + "]");
 		// println(">> SGNode[" + name + "].invalidateCompositeBounds()");
 		if (compositeBoundsChanged) return;
 		
@@ -1300,8 +1274,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 		}
 		if (applyTransformation) {
 			g.pushMatrix();
-			if (is3D) throw new Error("3D is currently not supported. [" + this + "]");
-			
 			if (applyTranslate) g.translate(x, y);
 			if (applyRotate) g.rotate(rotation);
 			if (applyScale) g.scale(scale);
@@ -1438,8 +1410,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @default false
 	 */
 	public void setCached(boolean cached) {
-		if (app.g.is3D()) { throw new Error("Caching is currently not supported for 3D content. ["
-				+ this + "]"); }
 		if (this.cached == cached) return;
 		this.cached = cached;
 		if (cached) cacheContentDirty = true;
