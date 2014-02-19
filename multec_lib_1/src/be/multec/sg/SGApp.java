@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Rectangle;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.FileHandler;
@@ -93,13 +94,6 @@ public class SGApp extends PApplet {
 	/* True when the redraw traversal is active. */
 	private boolean drawActive = false;
 	
-	/**
-	 * @return True when the draw traversal is active.
-	 */
-	public boolean drawActive() {
-		return drawActive;
-	}
-	
 	/* False as long as the PApplet.draw() method was not called for the first time. */
 	private boolean setupComplete = false;
 	
@@ -144,6 +138,8 @@ public class SGApp extends PApplet {
 		stage = new SGStage(this);
 		
 		name = getClassName();
+		
+		loop();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -187,8 +183,24 @@ public class SGApp extends PApplet {
 	// PApplet methods:
 	// ---------------------------------------------------------------------------------------------
 	
-	/** Trace the draw traversal when true. */
-	public boolean traceDrawTrav = false;
+	private boolean redrawPending = true;
+	
+	/*
+	 * Can be set to true when the scene-graph is currently being drawn, and should be redrawn again
+	 * in the next update-loop.
+	 */
+	private boolean redrawAgain = false;
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	public void redrawSG() {
+		// println(">> SGApp.redrawSG() - redrawPending: " + redrawPending + ", drawActive: "
+		// + drawActive);
+		if (redrawPending) return;
+		if (drawActive) redrawAgain = true;
+		else redrawPending = true;
+		loop();
+	}
 	
 	/**
 	 * This method should be called by overriding methods.
@@ -197,15 +209,14 @@ public class SGApp extends PApplet {
 	 */
 	@Override
 	public void draw() {
-		// if (stage.updatePending || stage.redrawPending)
-		// println("\n>> SGApp[" + name + "].draw() - " + stage.updatePending + ", "
-		// + stage.redrawPending);
+		// println("\n>> SGApp[" + name + "].draw() - " + stage.updatePending() + ", "
+		// + redrawPending);
 		
-		// Complete setup when draw() is called for the first time:
+		// First finalize the setup when draw() is called for the first time:
 		if (!setupComplete) {
-			stageMouseMatrix = g.getMatrix();
 			registerMethod("mouseEvent", this);
 			registerMethod("keyEvent", this);
+			stageMouseMatrix = g.getMatrix();
 			setupComplete = true;
 		}
 		
@@ -222,62 +233,82 @@ public class SGApp extends PApplet {
 				updates = dueUpdates;
 				dueUpdates = null;
 			}
-			for (DueUpdate update : updates)
+			for (DueUpdate update : updates) {
 				update.apply();
+			}
 		}
 		
 		// Trigger update traversal when needed:
-		updateActive = true;
+		if (updateActive) throw new Error("The updateActive is already active [in " + name + "].");
 		if (stage.updatePending()) {
+			updateActive = true;
 			stage.updateNode();
+			updateActive = false;
 		}
-		updateActive = false;
 		
 		// draw traversal:
 		if (drawActive) throw new Error("The redraw is already active [in " + name + "].");
-		drawActive = true;
 		if (DEBUG_MODE) stage.checkTree();
-		if (traceDrawTrav) {
 		// println("+ DRAW - START TRAVERSAL for [" + name + "]");
-			// stage.printTree();
-		}
-		if (stage.redrawPending()) {
+		if (redrawPending) {
+			drawActive = true;
+			redrawPending = false;
 			if (backgroundColor != null) background(backgroundColor.getRGB());
 			stage.drawNode(this.g);
+			if (redrawAgain) {
+				redrawAgain = false;
+				redrawPending = true;
+			}
+			drawActive = false;
 		}
-		drawActive = false;
-		if (traceDrawTrav) println("+ DRAW - END TRAVERSAL for [" + name + "]");
-		applyEnqueuedRedraws();
+		// println("+ DRAW - END TRAVERSAL for [" + name + "] - updatePending: "
+		// + stage.updatePending() + ", redrawPending: " + redrawPending);
 		
-		if (!stage.updatePending() && !stage.redrawPending()) noLoop();
+		applyEnqueuedUpdates();
+		
+		if (!stage.updatePending() && !redrawPending) noLoop();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
-	// Functionality for enqueueing redraw requests that were issued while the redraw traversal is
-	// active. This can happen when a redraw request was issued in draw-code (which is probably not
-	// a good idea). This can also happen when a redraw request was issued by another thread.
 	
-	private Object redrawQueueLock = new Object();
-	private ArrayList<SGNode> redrawQueue = new ArrayList<SGNode>();
-	private ArrayList<SGNode> redrawQueueAlt = new ArrayList<SGNode>();
+	/* Synchronization lock used for thread-safe adding and applying node update requests. */
+	private Object updateQueueLock = new Object();
 	
-	public void enqueueRedraw(SGNode node) {
-		synchronized (redrawQueueLock) {
-			redrawQueue.add(node);
+	/*
+	 * Two collections used for efficiently enqueueing deferred update requests added through the
+	 * applyEnqueuedUpdates method.
+	 */
+	private List<SGNode> updateQueue = new ArrayList<SGNode>();
+	private List<SGNode> updateQueueAlt = new ArrayList<SGNode>();
+	
+	/**
+	 * System method that enqueues nodes for which a update was requested while the update traversal
+	 * is active. This can happen when a update request was issued in update-code or when a update
+	 * request was issued by another thread. This method should only be called from SGNode.
+	 * 
+	 * @param node
+	 */
+	public void enqueueUpdate(SGNode node) {
+		synchronized (updateQueueLock) {
+			updateQueue.add(node);
 		}
 	}
 	
-	public void applyEnqueuedRedraws() {
-		synchronized (redrawQueueLock) {
-			if (redrawQueue.size() == 0) return;
-			if (SGNode.traceRedraw)
-				println("* REDRAW - applying enqueued redraws for [" + name + "]");
-			ArrayList<SGNode> queue = redrawQueue;
-			redrawQueue = redrawQueueAlt;
+	/*
+	 * System method that applied the deferred update requests enqueued through the
+	 * applyEnqueuedUpdates method.
+	 */
+	private void applyEnqueuedUpdates() {
+		synchronized (updateQueueLock) {
+			if (updateQueue.size() == 0) return;
+			// if (SGNode.traceUpdate)
+			// println("* update - applying enqueued updates for [" + name + "]");
+			List<SGNode> queue = updateQueue;
+			updateQueue = updateQueueAlt;
 			for (SGNode node : queue)
-				node.redraw();
+				node.invalidateNode();
 			queue.clear();
-			redrawQueueAlt = queue;
+			updateQueueAlt = queue;
 		}
 	}
 	

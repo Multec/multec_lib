@@ -151,7 +151,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		// println(">> " + this + "(SGNode).dispose() - addedToSG:" + addedToSG);
 		if (disposed) return;
 		
-		if (hasChildren) {
+		if (hasChildren()) {
 			if (traverse) {
 				Iterator<SGNode> iter = children.iterator();
 				removeAllNodes();
@@ -336,7 +336,11 @@ public class SGNode extends SGNodeBase implements PConstants {
 	public void visible(boolean visible) {
 		if (this.visible == visible) return;
 		this.visible = visible;
-		if (visible) redraw("SGNode.setVisible(true) [" + this + "]");
+		if (visible) {
+			// TODO: check if the following is really needed...
+			redrawPending = false; // set to false to make sure that the redraw applies
+			redraw("SGNode.setVisible(true) [" + this + "]");
+		}
 		else if (parent != null) parent.redraw("SGNode.setVisible(false) [" + this + "]");
 		invalidateCompositeBounds();
 	}
@@ -581,7 +585,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 				+ this.toString() + ") is already in the scene-graph.");
 		else {
 			addedToSG = true;
-			if (hasChildren) for (SGNode child : children)
+			if (hasChildren()) for (SGNode child : children)
 				child.onAddedToSG();
 		}
 	}
@@ -594,7 +598,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		// println(">> " + this + "(SGNode).onRemovedFromSG() - addedToSG:" + addedToSG);
 		if (addedToSG) {
 			addedToSG = false;
-			if (hasChildren) for (SGNode child : children)
+			if (hasChildren()) for (SGNode child : children)
 				child.onRemovedFromSG();
 		}
 		else throw new Error("SGNode.onRemovedFromSG() was" + " called but the node ("
@@ -604,11 +608,6 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// *********************************************************************************************
 	// Container functionality:
 	// ---------------------------------------------------------------------------------------------
-	
-	/**
-	 * True when this node contains one or more child-nodes. Do not directly modify this property.
-	 */
-	private boolean hasChildren = false;
 	
 	/** The list of child nodes in this node. */
 	private final CopyOnWriteArrayList<SGNode> children = new CopyOnWriteArrayList<SGNode>();
@@ -633,7 +632,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @return true when this node is a container that contains child-nodes
 	 */
 	public boolean hasChildren() {
-		return hasChildren;
+		return children.size() > 0;
 	}
 	
 	/** Get the list of child nodes in this container. */
@@ -660,13 +659,20 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (children.contains(child)) { throw new Error("The child (" + child
 				+ ") is already in the children list (of " + this + ") [in SGNode.addNode]"); }
 		if (children.add(child)) {
-			hasChildren = true;
 			child.parent = this;
 			if (addedToSG) child.onAddedToSG();
 			if (child.wantsSysMouseEvents) forwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) forwardKeyEventTo(child);
 			if (child.updatePending && !updatePending) invalidateNode();
-			redraw("SGNode.addNode(SGNode) [" + this + "]"); // always request redraw
+			if (cached) {
+				for (SGNode child_2 : children)
+					child_2.addCachedParents(cachedParents + 1);
+			}
+			else if (cachedParents > 0) {
+				for (SGNode child_2 : children)
+					child_2.addCachedParents(cachedParents);
+			}
+			redraw("SGNode.addNode(SGNode) [" + this + "]");
 			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
 		return child;
@@ -692,11 +698,12 @@ public class SGNode extends SGNodeBase implements PConstants {
 	/** Remove the given node from this container. */
 	public void removeNode(SGNode child) {
 		if (children.remove(child)) {
-			if (children.size() == 0) hasChildren = false;
 			if (addedToSG) child.onRemovedFromSG();
 			child.parent = null;
 			if (child.wantsSysMouseEvents) unforwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) unforwardKeyEventsTo(child);
+			if (cached) child.removeCachedParents(cachedParents + 1);
+			else if (cachedParents > 0) child.removeCachedParents(cachedParents);
 			redraw("SGNode.removeNode(SGNode) [" + this + "]");
 			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
@@ -713,7 +720,8 @@ public class SGNode extends SGNodeBase implements PConstants {
 			child.parent = null;
 			if (child.wantsSysMouseEvents) unforwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) unforwardKeyEventsTo(child);
-			if (children.size() == 0) hasChildren = false;
+			if (cached) child.removeCachedParents(cachedParents + 1);
+			else if (cachedParents > 0) child.removeCachedParents(cachedParents);
 			redraw("SGNode.removeNode(int) [" + this + "]");
 			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
@@ -731,9 +739,10 @@ public class SGNode extends SGNodeBase implements PConstants {
 			child.parent = null;
 			if (child.wantsSysMouseEvents) unforwardMouseEventsTo(child);
 			if (child.wantsSysKeyEvents) unforwardKeyEventsTo(child);
+			if (cached) child.removeCachedParents(cachedParents + 1);
+			else if (cachedParents > 0) child.removeCachedParents(cachedParents);
 		}
 		children.clear();
-		hasChildren = false;
 		redraw("SGNode.removeAllNodes() [" + this + "]");
 		if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 	}
@@ -813,7 +822,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (explicitWidth != 0 && explicitHeight != 0) {
 			localBounds.setBounds(0, 0, ceil(explicitWidth), ceil(explicitHeight));
 		}
-		else if (!hasChildren)
+		else if (!hasChildren())
 			System.err.println("The method updateLocalBounds() is not implemented for " + this.name
 					+ ".");
 	}
@@ -1028,30 +1037,61 @@ public class SGNode extends SGNodeBase implements PConstants {
 		return updatePending;
 	}
 	
+	// public static boolean traceInvalidateUpdate = false;
+	
 	/**
-	 * Call this method when this node needs to be updated.
+	 * Call this method when the state of this node needs to be updated. Calling this method will
+	 * not trigger a redraw. Call redraw() to request a redraw.
+	 * 
+	 * @see SGNode#redraw()
 	 */
-	public final void invalidateNode() {
-		// if (updatePending) return;
-		updatePending = true;
-		if (isStage) {
-			if (app != null) app.loop();
+	final public void invalidateNode() {
+		// if (!enabled) return;
+		
+		if (updatePending) {
+			// if (traceInvalidateUpdate)
+			// println("* invalidateUpdate already pending for [" + name + "]");
+			return;
 		}
-		else if (parent != null && !parent.updatePending) parent.invalidateNode();
+		
+		updatePending = true;
+		
+		if (app.updateActive()) {
+			// if (traceInvalidateUpdate) println("* invalidateUpdate enqueued for [" + name + "]");
+			app.enqueueUpdate(this);
+			return;
+		}
+		
+		// if (traceInvalidateUpdate) println("* invalidateUpdate scheduled for [" + name + "]");
+		
+		if (parent != null && !parent.updatePending) parent.invalidateNode();
+		else if (isStage && app != null) {
+			// if (traceInvalidateUpdate)
+			// println("* invalidateUpdate - loop() CALLED from [" + name + "]");
+			app.loop();
+		}
+		
+		if (SGApp.DEBUG_MODE) checkTree();
 	}
 	
 	// ---------------------------------------------------------------------------------------------
 	
 	/**
 	 * A system method that calls the update() method for this node and for its child-nodes. Do not
-	 * override this method in custom node-classes. Override the update() method instead.
+	 * override this method in custom node-classes. Override the update() method instead. This
+	 * method should only be called by SGApp.
+	 * 
+	 * @return True when this node needs to be updated in the next update loop.
 	 * 
 	 * @see SGNode#update()
 	 */
-	final public void updateNode() {
-		boolean trace = false;
-		if (disposed || !updatePending) return;
+	final public boolean updateNode() {
+		if (!updatePending) throw new Error("!updatePending in updateNode");
+		if (disposed) return false;
+		
 		updatePending = false;
+		
+		boolean trace = false;
 		if (trace) {
 			println(">> SGNode[" + this.name + "].update_sys()");
 			println(" - localTMatrixDirty: " + localTMatrixDirty);
@@ -1060,7 +1100,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			println(" - compositeBoundsChanged: " + compositeBoundsChanged);
 		}
 		
-		// apply the modifiers:
+		// apply the controllers:
 		if (modifiers != null && modifiers.size() > 0) {
 			for (INodeController modifier : modifiers) {
 				modifier.apply(this);
@@ -1079,9 +1119,9 @@ public class SGNode extends SGNodeBase implements PConstants {
 		}
 		
 		// traverse the children, except for cached nodes:
-		if (hasChildren) {
+		if (hasChildren()) {
 			for (SGNode child : children) {
-				if (child.visible && child.updatePending) child.updateNode();
+				if (child.updatePending && child.updateNode()) updatePending = true;
 			}
 		}
 		
@@ -1098,27 +1138,17 @@ public class SGNode extends SGNodeBase implements PConstants {
 			if (trace) println(" * compositeBoundsChanged! [" + this.name + "]");
 			compositeBoundsChanged = false;
 		}
+		
+		return updatePending;
 	}
 	
 	// *********************************************************************************************
 	// Draw functionality:
 	// ---------------------------------------------------------------------------------------------
 	
-	/* True when a redraw was requested. */
-	private boolean redrawPending = true;
-	
-	/**
-	 * @return True when this node needs to be redrawn in the next update-loop.
-	 */
-	final public boolean redrawPending() {
-		return redrawPending;
-	}
-	
-	// ---------------------------------------------------------------------------------------------
-	
 	/**
 	 * Implement this method for nodes that have graphical content. The implementation should draw
-	 * the graphical content of this node on the PGraphics object that is passed as an argument.
+	 * the graphical content of this node on the PGraphics object that is passed as the argument.
 	 * 
 	 * This method is called in a traversal starting with the stage, the root of the scene-graph.
 	 * This method is called after the update() method.
@@ -1131,60 +1161,45 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	// ---------------------------------------------------------------------------------------------
 	
+	private boolean redrawPending = true;
+	
 	public static boolean traceRedraw = false;
 	
 	/**
 	 * Request a redraw of this node.
 	 * 
-	 * Use the invalidateContentFromUpdate method instead of this method when you want to request a
-	 * redraw of this node from within the update loop.
-	 * 
-	 * @see invalidateContentFromUpdate
+	 * @param caller A string that describes the caller for debugging purposes.
 	 */
-	public void redraw(String caller) {
-		if (app.drawActive()) {
-			if (traceRedraw) println("* REDRAW ENQUEUED for [" + name + "] from [" + caller + "]");
-			app.enqueueRedraw(this);
-			return;
-		}
-		
-		if (disposed || redrawPending) {
-			if (traceRedraw) println("* REDRAW IGNORED for [" + name + "] from [" + caller + "]");
-			return;
-		}
-		
-		redrawPending = true;
-		if (traceRedraw) println("* REDRAW SCHEDULED for [" + name + "] from [" + caller + "]");
-		
+	final public void redraw(String caller) {
+		// if (traceRedraw) println("* REDRAW called for [" + name + "] from [" + caller + "]");
 		if (!visible) return;
+		if (redrawPending) return;
+		redrawPending = true;
+		app.redrawSG();
+		// if (traceRedraw) println("* REDRAW scheduled for [" + name + "] from [" + caller + "]");
 		if (cached) cacheContentDirty = true;
-		if (parent != null) parent.redraw(caller);
-		else if (isStage && app != null) {
-			if (traceRedraw)
-				println("* REDRAW - loop() CALLED from [" + name + "] from [" + caller + "]");
-			app.loop();
+		if (cachedParents > 0) {
+			if (parent == null) throw new Error("Unexpected");
+			if (parent.visible && !parent.redrawPending) parent.redraw(); // caller);
 		}
-		if (SGApp.DEBUG_MODE) checkTree();
 	}
 	
+	/**
+	 * Request a redraw of this node.
+	 */
 	final public void redraw() {
-		redraw("--");
-	}
-	
-	// ---------------------------------------------------------------------------------------------
-	
-	public boolean drawBounds = false;
-	
-	public void drawBounds() {
-		if (this.drawBounds) return;
-		this.drawBounds = true;
-		redraw();
-	}
-	
-	public void drawBounds(boolean drawBounds) {
-		if (this.drawBounds == drawBounds) return;
-		this.drawBounds = drawBounds;
-		redraw();
+		// if (traceRedraw)
+		// println("* REDRAW called for [" + name + "], redrawPending: " + redrawPending
+		// + ", visible: " + visible);
+		if (!visible) return;
+		if (redrawPending) return;
+		redrawPending = true;
+		app.redrawSG();
+		if (cached) cacheContentDirty = true;
+		if (cachedParents > 0) {
+			if (parent == null) throw new Error("Unexpected");
+			if (parent.visible && !parent.redrawPending) parent.redraw();
+		}
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -1197,10 +1212,13 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @see SGNode#draw(processing.core.PGraphics)
 	 */
 	public void drawNode(PGraphics g) {
+		if (app.updateActive()) throw new Error("updateActive in SGNode.drawNode for " + name);
+		if (disposed) throw new Error("disposed in SGNode.drawNode for " + name);
+		if (!visible) throw new Error("!visible in SGNode.drawNode for " + name);
+		
 		boolean trace = false;
-		if (app.updateActive()) throw new Error();
-		if (!visible || disposed) return;
-		if (trace) println(">> SGNode[" + this + "].draw_sys()");
+		if (trace) println(">> SGNode[" + this + "].drawNode()");
+		
 		redrawPending = false;
 		
 		if (cached) {
@@ -1225,7 +1243,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 				cache.translate(-cachedBounds.x, -cachedBounds.y);
 				cache.clear();
 				draw(cache);
-				if (hasChildren) {
+				if (hasChildren()) {
 					for (SGNode child : children) {
 						if (child.visible) child.drawNode(cache);
 					}
@@ -1251,7 +1269,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			}
 			
 			// forward the draw_sys() call to each child:
-			if (hasChildren) {
+			if (hasChildren()) {
 				for (SGNode child : children) {
 					if (child.visible) child.drawNode(g);
 				}
@@ -1285,6 +1303,22 @@ public class SGNode extends SGNodeBase implements PConstants {
 			inverseTMatrix.invert();
 			if (trace) printInverseTMatrix();
 		}
+	}
+	
+	// ---------------------------------------------------------------------------------------------
+	
+	public boolean drawBounds = false;
+	
+	public void drawBounds() {
+		if (this.drawBounds) return;
+		this.drawBounds = true;
+		redraw();
+	}
+	
+	public void drawBounds(boolean drawBounds) {
+		if (this.drawBounds == drawBounds) return;
+		this.drawBounds = drawBounds;
+		redraw();
 	}
 	
 	// *********************************************************************************************
@@ -1332,8 +1366,10 @@ public class SGNode extends SGNodeBase implements PConstants {
 	private void invalidateTransformation() {
 		inverseTMatrixDirty = true;
 		localTMatrixDirty = true;
-		if (hasChildren) for (SGNode child : children) {
-			child.invalidateTransformation();
+		if (hasChildren()) {
+			for (SGNode child : children) {
+				child.invalidateTransformation();
+			}
 		}
 		redraw("SGNode.invalidateTransformation() [" + this + "]");
 		// Do not invalidate the composite-bounds here. Doing so would also invalidate the
@@ -2022,15 +2058,17 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// ---------------------------------------------------------------------------------------------
 	
 	private class CheckTreeState {
-		public boolean stagePendingError = false;
+		public boolean missingStageUpdatePendingError = false;
 		public boolean childEqParentError = false;
 	}
 	
 	public void checkTree() {
-		boolean stageRedrawPending = app.getStage().redrawPending();
 		CheckTreeState state = new CheckTreeState();
-		if (!stageRedrawPending) checkTreeRec(app.getStage(), state);
-		if (state.stagePendingError) {
+		if (!app.getStage().updatePending()) checkTreeRec(app.getStage(), state);
+		if (state.missingStageUpdatePendingError) {
+			System.err.println("! The scene-graph is inconsistent."
+					+ " The stage should have a pending update"
+					+ " becasue at least one node has a pending update.");
 			printTree();
 			throw new Error("Found error in SGNode.checkTree. See System.err for more details. ["
 					+ this + "]");
@@ -2038,14 +2076,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	}
 	
 	public void checkTreeRec(SGNode node, CheckTreeState state) {
-		if (node.redrawPending) {
-			if (!state.stagePendingError) {
-				System.err.println("The stage redraw is not pending,"
-						+ " but the redraw of these nodes is pending: [" + this + "]");
-				state.stagePendingError = true;
-			}
-			System.err.println(" - " + node.name);
-		}
+		if (node.updatePending) state.missingStageUpdatePendingError = true;
 		for (SGNode child : node.children) {
 			if (child == node) {
 				state.childEqParentError = true;
@@ -2065,7 +2096,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	private void printTree(SGNode node, String indent) {
 		String line = indent + "- " + node;
-		if (node.redrawPending) line += " - redrawPending";
+		if (node.updatePending) line += " - updatePending";
 		println(line);
 		indent += "  ";
 		for (SGNode child : node.children) {
