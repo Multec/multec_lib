@@ -102,7 +102,7 @@ public class SGRect extends SGFigure {
 		this.rectWidth = width;
 		centerX = width / 2;
 		invalidateLocalBounds();
-		redraw("SGRect.setWidth(" + width + ") [" + this + "]");
+		redraw(); // SGRect.setWidth(" + width + ") [" + this + "]");
 	}
 	
 	/**
@@ -113,7 +113,7 @@ public class SGRect extends SGFigure {
 		this.rectHeight = height;
 		centerY = height / 2;
 		invalidateLocalBounds();
-		redraw("SGRect.setHeight(" + height + ") [" + this + "]");
+		redraw(); // SGRect.setHeight(" + height + ") [" + this + "]");
 	}
 	
 	/**
@@ -144,7 +144,7 @@ public class SGRect extends SGFigure {
 		centerX = width / 2;
 		centerY = height / 2;
 		invalidateLocalBounds();
-		redraw("SGRect.setSize() [" + this + "]");
+		redraw(); // SGRect.setSize() [" + this + "]");
 		return this;
 	}
 	

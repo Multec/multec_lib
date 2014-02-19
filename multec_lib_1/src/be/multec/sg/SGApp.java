@@ -414,21 +414,21 @@ public class SGApp extends PApplet {
 	 * @return The mouse position in the stage.
 	 */
 	public PVector getMouseVector() {
-		boolean trace = false;
-		if (trace) {
-			println(">> SGApp.getMouseVector() - stageMouseVectorDirty: " + stageMouseVectorDirty);
-		}
+		// boolean trace = false;
+		// if (trace) {
+		// println(">> SGApp.getMouseVector() - stageMouseVectorDirty: " + stageMouseVectorDirty);
+		// }
 		if (stageMouseVectorDirty) {
-			if (trace) {
-				println(" - stageMouseMatrix:");
-				printMatrix(stageMouseMatrix);
-			}
+			// if (trace) {
+			// println(" - stageMouseMatrix:");
+			// printMatrix(stageMouseMatrix);
+			// }
 			mouseVector.set(mouseX, mouseY);
 			stageMouseMatrix.mult(mouseVector, stageMouseVector);
-			if (trace) {
-				println(" - mouseVector: " + mouseVector.x + ", " + mouseVector.y);
-				println(" - stageMouseVector: " + stageMouseVector.x + ", " + stageMouseVector.y);
-			}
+			// if (trace) {
+			// println(" - mouseVector: " + mouseVector.x + ", " + mouseVector.y);
+			// println(" - stageMouseVector: " + stageMouseVector.x + ", " + stageMouseVector.y);
+			// }
 			stageMouseVectorDirty = false;
 		}
 		return stageMouseVector;
@@ -596,7 +596,7 @@ public class SGApp extends PApplet {
 	/* @see java.awt.Component#setBackground(java.awt.Color) */
 	public void setBackground(Color color) {
 		backgroundColor = color;
-		stage.redraw("SGApp.setBackground()");
+		stage.redraw(); // "SGApp.setBackground()");
 	}
 	
 	// *********************************************************************************************

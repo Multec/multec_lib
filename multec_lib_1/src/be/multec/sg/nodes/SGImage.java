@@ -321,7 +321,7 @@ public class SGImage extends SGNode {
 		if (this.explicitWidth == explicitWidth) return;
 		this.explicitWidth = explicitWidth;
 		updateImageParams();
-		redraw("SGImage.setWidth(int) [" + this + "]");
+		redraw(); // "SGImage.setWidth(int) [" + this + "]");
 	}
 	
 	/**
@@ -332,7 +332,7 @@ public class SGImage extends SGNode {
 		if (this.explicitHeight == explicitHeight) return;
 		this.explicitHeight = explicitHeight;
 		updateImageParams();
-		redraw("SGImage.setHeight(int) [" + this + "]");
+		redraw(); // "SGImage.setHeight(int) [" + this + "]");
 	}
 	
 	/**
@@ -350,7 +350,7 @@ public class SGImage extends SGNode {
 		if (this.imageMode == imageMode) return this;
 		imageMode = imageMode;
 		updateImageParams();
-		redraw("SGImage.setImageMode(SGImageMode) [" + this + "]");
+		redraw(); // "SGImage.setImageMode(SGImageMode) [" + this + "]");
 		return this;
 	}
 	
@@ -369,14 +369,14 @@ public class SGImage extends SGNode {
 		if (this.sourceImg == image) return this;
 		this.sourceImg = image;
 		updateImageParams();
-		redraw("SGImage.setImage(PImage) [" + this + "]");
+		redraw(); // "SGImage.setImage(PImage) [" + this + "]");
 		return this;
 	}
 	
 	public SGImage noTint() {
 		if (!applyTint) return this;
 		applyTint = false;
-		redraw("SGImage.noTint() [" + this + "]");
+		redraw(); // "SGImage.noTint() [" + this + "]");
 		return this;
 	}
 	
@@ -385,7 +385,7 @@ public class SGImage extends SGNode {
 		tintRGB = rgb;
 		tintAlpha = alpha;
 		applyTint = true;
-		redraw("SGImage.setTint(int, float) [" + this + "]");
+		redraw(); // "SGImage.setTint(int, float) [" + this + "]");
 		return this;
 	}
 	
@@ -405,7 +405,7 @@ public class SGImage extends SGNode {
 	public SGImage setBlendMode(int blendMode) {
 		if (this.blendMode == blendMode) return this;
 		this.blendMode = blendMode;
-		redraw("SGImage.setBlendMode(int) [" + this + "]");
+		redraw(); // "SGImage.setBlendMode(int) [" + this + "]");
 		return this;
 	}
 	

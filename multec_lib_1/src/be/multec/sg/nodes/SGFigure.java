@@ -103,7 +103,7 @@ abstract public class SGFigure extends SGNode {
 	public void noFill() {
 		if (!filled) return;
 		filled = false;
-		redraw("SGFigure.noFill() [" + this + "]");
+		redraw(); // "SGFigure.noFill() [" + this + "]");
 	}
 	
 	/**
@@ -115,7 +115,7 @@ abstract public class SGFigure extends SGNode {
 		if (filled && (fillColor == color || fillColor.equals(color))) return;
 		filled = true;
 		fillColor = color;
-		redraw("SGFigure.fill() [" + this + "]");
+		redraw(); // "SGFigure.fill() [" + this + "]");
 	}
 	
 	public void fill(int r, int g, int b) {
@@ -149,7 +149,7 @@ abstract public class SGFigure extends SGNode {
 		if (!stroked) return;
 		stroked = false;
 		invalidateLocalBounds();
-		redraw("SGFigure.noStroke() [" + this + "]");
+		redraw(); // "SGFigure.noStroke() [" + this + "]");
 	}
 	
 	/**
@@ -162,7 +162,7 @@ abstract public class SGFigure extends SGNode {
 		if (!stroked) invalidateLocalBounds();
 		stroked = true;
 		strokeColor = color;
-		redraw("SGFigure.stroke(Color) [" + this + "]");
+		redraw(); // "SGFigure.stroke(Color) [" + this + "]");
 	}
 	
 	/**
@@ -179,7 +179,7 @@ abstract public class SGFigure extends SGNode {
 		stroked = true;
 		strokeColor = color;
 		strokeWeight = weight;
-		redraw("SGFigure.stroke(Color, float) [" + this + "]");
+		redraw(); // "SGFigure.stroke(Color, float) [" + this + "]");
 	}
 	
 	// ---------------------------------------------------------------------------------------------
@@ -198,7 +198,7 @@ abstract public class SGFigure extends SGNode {
 		if (strokeWeight == weight) return;
 		strokeWeight = weight;
 		if (stroked) {
-			redraw("SGFigure.strokeWeight() [" + this + "]");
+			redraw(); // "SGFigure.strokeWeight() [" + this + "]");
 			invalidateLocalBounds();
 		}
 	}
@@ -225,7 +225,7 @@ abstract public class SGFigure extends SGNode {
 	public void blendMode(int blendMode) {
 		if (this.blendMode == blendMode) return;
 		this.blendMode = blendMode;
-		redraw("SGFigure.blendMode() [" + this + "]");
+		redraw(); // "SGFigure.blendMode() [" + this + "]");
 	}
 	
 	// *********************************************************************************************

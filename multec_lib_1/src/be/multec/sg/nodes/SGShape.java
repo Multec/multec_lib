@@ -129,7 +129,7 @@ public class SGShape extends SGFigure {
 	public void setShape(PShape shape) {
 		checkShape(shape);
 		this.shape = shape;
-		redraw("SGShape.setShape(PShape) [" + this + "]");
+		redraw(); // SGShape.setShape(PShape) [" + this + "]");
 		invalidateLocalBounds();
 	}
 	
@@ -161,7 +161,7 @@ public class SGShape extends SGFigure {
 		if (this.position == position) return;
 		this.position = position;
 		invalidateLocalBounds();
-		redraw("SGShape.setPosition(Position) [" + this + "]");
+		redraw(); // SGShape.setPosition(Position) [" + this + "]");
 	}
 	
 	// *********************************************************************************************
@@ -177,7 +177,7 @@ public class SGShape extends SGFigure {
 		if (useNodeStyles) return;
 		useNodeStyles = true;
 		invalidateLocalBounds();
-		redraw("SGShape.useNodeStyles() [" + this + "]");
+		redraw(); // SGShape.useNodeStyles() [" + this + "]");
 	}
 	
 	/**
@@ -198,7 +198,7 @@ public class SGShape extends SGFigure {
 		if (!useNodeStyles) return;
 		useNodeStyles = false;
 		invalidateLocalBounds();
-		redraw("SGShape.useShapeStyles() [" + this + "]");
+		redraw(); // SGShape.useShapeStyles() [" + this + "]");
 	}
 	
 	/**

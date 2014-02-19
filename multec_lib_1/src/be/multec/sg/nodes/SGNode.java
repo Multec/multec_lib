@@ -339,9 +339,9 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (visible) {
 			// TODO: check if the following is really needed...
 			redrawPending = false; // set to false to make sure that the redraw applies
-			redraw("SGNode.setVisible(true) [" + this + "]");
+			redraw(); // "SGNode.setVisible(true) [" + this + "]");
 		}
-		else if (parent != null) parent.redraw("SGNode.setVisible(false) [" + this + "]");
+		else if (parent != null) parent.redraw(); // "SGNode.setVisible(false) [" + this + "]");
 		invalidateCompositeBounds();
 	}
 	
@@ -672,7 +672,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 				for (SGNode child_2 : children)
 					child_2.addCachedParents(cachedParents);
 			}
-			redraw("SGNode.addNode(SGNode) [" + this + "]");
+			redraw(); // "SGNode.addNode(SGNode) [" + this + "]");
 			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
 		return child;
@@ -704,7 +704,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			if (child.wantsSysKeyEvents) unforwardKeyEventsTo(child);
 			if (cached) child.removeCachedParents(cachedParents + 1);
 			else if (cachedParents > 0) child.removeCachedParents(cachedParents);
-			redraw("SGNode.removeNode(SGNode) [" + this + "]");
+			redraw(); // "SGNode.removeNode(SGNode) [" + this + "]");
 			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
 		else throw new Error("SGNode.removeChild(SGNode) was"
@@ -722,7 +722,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			if (child.wantsSysKeyEvents) unforwardKeyEventsTo(child);
 			if (cached) child.removeCachedParents(cachedParents + 1);
 			else if (cachedParents > 0) child.removeCachedParents(cachedParents);
-			redraw("SGNode.removeNode(int) [" + this + "]");
+			redraw(); // "SGNode.removeNode(int) [" + this + "]");
 			if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 		}
 		catch (IndexOutOfBoundsException exc) {
@@ -743,7 +743,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			else if (cachedParents > 0) child.removeCachedParents(cachedParents);
 		}
 		children.clear();
-		redraw("SGNode.removeAllNodes() [" + this + "]");
+		redraw(); // "SGNode.removeAllNodes() [" + this + "]");
 		if (!localCompositeBoundsChanged) invalidateLocalCompositeBounds();
 	}
 	
@@ -871,10 +871,10 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @see transformedBoundsDirty
 	 */
 	final public Rectangle getLocalCompositeBounds() {
-		boolean trace = false;
-		if (trace) println(">> SGNode[" + name + "].getLocalCompositeBounds()");
+		// boolean trace = false;
+		// if (trace) println(">> SGNode[" + name + "].getLocalCompositeBounds()");
 		if (localCompositeBoundsDirty) {
-			if (trace) println(" - localCompositeBoundsDirty = true");
+			// if (trace) println(" - localCompositeBoundsDirty = true");
 			if (localCompositeBounds == null) localCompositeBounds = new Rectangle();
 			if (!visible) {
 				localCompositeBounds.setBounds(0, 0, 0, 0);
@@ -883,17 +883,17 @@ public class SGNode extends SGNodeBase implements PConstants {
 			}
 			else {
 				localCompositeBounds.setBounds(getLocalBounds());
-				if (trace) println(" - local : " + rectStr(localCompositeBounds));
+				// if (trace) println(" - local : " + rectStr(localCompositeBounds));
 				
 				for (SGNode child : children) {
 					if (!child.visible) continue;
 					Rectangle childBounds = child.getCompositeBounds();
-					if (trace) println(" - adding: " + rectStr(childBounds));
+					// if (trace) println(" - adding: " + rectStr(childBounds));
 					addBounds(localCompositeBounds, childBounds);
 				}
 			}
 			localCompositeBoundsDirty = false;
-			if (trace) println(" < result: " + rectStr(localCompositeBounds));
+			// if (trace) println(" < result: " + rectStr(localCompositeBounds));
 		}
 		return localCompositeBounds;
 	}
@@ -955,9 +955,9 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 *         applied to these bounds.
 	 */
 	final public Rectangle getCompositeBounds() {
-		boolean trace = false;
-		if (trace) println("* [" + this.name + "].getCompositeBounds()");
-		if (trace) println(" - compositeBoundsDirty = " + compositeBoundsDirty);
+		// boolean trace = false;
+		// if (trace) println("* [" + this.name + "].getCompositeBounds()");
+		// if (trace) println(" - compositeBoundsDirty = " + compositeBoundsDirty);
 		if (compositeBoundsDirty) {
 			if (compositeBounds == null) compositeBounds = new Rectangle();
 			if (!visible) {
@@ -969,7 +969,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 				Rectangle b = compositeBounds;
 				b.setBounds(getLocalCompositeBounds());
 				if (applyRotate || applyScale) {
-					if (trace) println(" - applyRotate || applyScale [" + this + "]");
+					// if (trace) println(" - applyRotate || applyScale [" + this + "]");
 					if (localTMatrixDirty) throw new Error("localTMatrix is dirty [" + this + "]");
 					float x1 = localTMatrix.multX(b.x, b.y);
 					float y1 = localTMatrix.multY(b.x, b.y);
@@ -985,13 +985,13 @@ public class SGNode extends SGNodeBase implements PConstants {
 					b.height = ceil(Math.max(Math.max(y1, y2), Math.max(y3, y4))) - b.y;
 				}
 				else if (applyTranslate) {
-					if (trace) println(" - applyTranslate only [" + this + "]");
+					// if (trace) println(" - applyTranslate only [" + this + "]");
 					b.x = floor(b.x + x);
 					b.y = floor(b.y + y);
 				}
 			}
 			compositeBoundsDirty = false;
-			if (trace) println(" < result: " + rectStr(compositeBounds));
+			// if (trace) println(" < result: " + rectStr(compositeBounds));
 		}
 		return compositeBounds;
 	}
@@ -1092,14 +1092,14 @@ public class SGNode extends SGNodeBase implements PConstants {
 		
 		updatePending = false;
 		
-		boolean trace = false;
-		if (trace) {
-			println(">> SGNode[" + this.name + "].update_sys()");
-			println(" - localTMatrixDirty: " + localTMatrixDirty);
-			println(" - localBoundsChanged: " + localBoundsChanged);
-			println(" - localCompositeBoundsChanged: " + localCompositeBoundsChanged);
-			println(" - compositeBoundsChanged: " + compositeBoundsChanged);
-		}
+		// boolean trace = false;
+		// if (trace) {
+		// println(">> SGNode[" + this.name + "].update_sys()");
+		// println(" - localTMatrixDirty: " + localTMatrixDirty);
+		// println(" - localBoundsChanged: " + localBoundsChanged);
+		// println(" - localCompositeBoundsChanged: " + localCompositeBoundsChanged);
+		// println(" - compositeBoundsChanged: " + compositeBoundsChanged);
+		// }
 		
 		// apply the controller:
 		if (controller != null) controller.apply(this);
@@ -1107,7 +1107,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 		
 		// update local transformation matrix:
 		if (localTMatrixDirty) {
-			if (trace) println(" * localTMatrixDirty! [" + this.name + "]");
+			// if (trace) println(" * localTMatrixDirty! [" + this.name + "]");
 			localTMatrix.reset();
 			if (applyTranslate) localTMatrix.translate(x, y);
 			if (applyRotate) localTMatrix.rotate(rotation);
@@ -1126,13 +1126,13 @@ public class SGNode extends SGNodeBase implements PConstants {
 		if (localBoundsChanged) validateLocalBounds();
 		
 		if (localCompositeBoundsChanged) {
-			if (trace) println(" * localCompositeBoundsChanged! [" + this.name + "]");
+			// if (trace) println(" * localCompositeBoundsChanged! [" + this.name + "]");
 			localCompositeBoundsChanged = false;
 			if (cached) cacheSizeDirty = true;
 		}
 		
 		if (compositeBoundsChanged) {
-			if (trace) println(" * compositeBoundsChanged! [" + this.name + "]");
+			// if (trace) println(" * compositeBoundsChanged! [" + this.name + "]");
 			compositeBoundsChanged = false;
 		}
 		
@@ -1160,7 +1160,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	
 	private boolean redrawPending = true;
 	
-	public static boolean traceRedraw = false;
+	// public static boolean traceRedraw = false;
 	
 	/**
 	 * Request a redraw of this node.
@@ -1209,17 +1209,19 @@ public class SGNode extends SGNodeBase implements PConstants {
 	 * @see SGNode#draw(processing.core.PGraphics)
 	 */
 	public void drawNode(PGraphics g) {
-		if (app.updateActive()) throw new Error("updateActive in SGNode.drawNode for " + name);
-		if (disposed) throw new Error("disposed in SGNode.drawNode for " + name);
-		if (!visible) throw new Error("!visible in SGNode.drawNode for " + name);
+		// if (SGApp.DEBUG) {
+		// if (app.updateActive()) throw new Error("updateActive in SGNode.drawNode for " + name);
+		// if (disposed) throw new Error("disposed in SGNode.drawNode for " + name);
+		// if (!visible) throw new Error("!visible in SGNode.drawNode for " + name);
+		// }
 		
-		boolean trace = false;
-		if (trace) println(">> SGNode[" + this + "].drawNode()");
+		// boolean trace = true;
+		// if (trace) println(">> SGNode[" + this + "].drawNode()");
 		
 		redrawPending = false;
 		
 		if (cached) {
-			if (trace) println(" * cached! [" + this + "]");
+			// if (trace) println(" * cached! [" + this + "]");
 			if (cachedBounds == null) cachedBounds = new Rectangle();
 			if (cache == null) {
 				cacheContentDirty = true;
@@ -1234,7 +1236,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 			}
 			
 			if (cacheContentDirty) {
-				if (trace) println(" * cacheContentDirty! [" + this + "]");
+				// if (trace) println(" * cacheContentDirty! [" + this + "]");
 				cache.beginDraw();
 				cache.resetMatrix();
 				cache.translate(-cachedBounds.x, -cachedBounds.y);
@@ -1278,12 +1280,12 @@ public class SGNode extends SGNodeBase implements PConstants {
 	}
 	
 	protected void applyTransformation(PGraphics g) {
-		boolean trace = false;
-		if (trace) {
-			println(">> SGNode[" + this + "].applyTransformation()");
-			println(" - matrix:");
-			printMatrix(g.getMatrix());
-		}
+		// boolean trace = false;
+		// if (trace) {
+		// println(">> SGNode[" + this + "].applyTransformation()");
+		// println(" - matrix:");
+		// printMatrix(g.getMatrix());
+		// }
 		if (applyTransformation) {
 			g.pushMatrix();
 			if (applyTranslate) g.translate(x, y);
@@ -1293,12 +1295,12 @@ public class SGNode extends SGNodeBase implements PConstants {
 		
 		// update the locally stored transformation matrix:
 		if (inverseTMatrixDirty) {
-			if (trace) println("* transformMatrixDirty [" + this + "]");
+			// if (trace) println("* transformMatrixDirty [" + this + "]");
 			
 			// update the inverse transformation matrix:
 			inverseTMatrix = g.getMatrix();
 			inverseTMatrix.invert();
-			if (trace) printInverseTMatrix();
+			// if (trace) printInverseTMatrix();
 		}
 	}
 	
@@ -1368,7 +1370,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 				child.invalidateTransformation();
 			}
 		}
-		redraw("SGNode.invalidateTransformation() [" + this + "]");
+		redraw(); // "SGNode.invalidateTransformation() [" + this + "]");
 		// Do not invalidate the composite-bounds here. Doing so would also invalidate the
 		// composite-bounds in the children of this node, which is not necesssary.
 	}
@@ -1413,7 +1415,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	PGraphics cache;
 	
 	/*
-	 * True when the (graphics) content of this node and its children are cached in a bitmap image.
+	 * True when the (graphics) content of this node and its children are cached in a bitmap image. 
 	 */
 	private boolean cached = false;
 	
@@ -1730,7 +1732,7 @@ public class SGNode extends SGNodeBase implements PConstants {
 	// ---------------------------------------------------------------------------------------------
 	// system mouse methods:
 	
-	static boolean traceMClicked = false;
+	// static boolean traceMClicked = false;
 	
 	/**
 	 * System method. This method should only be called from SGApp.
@@ -1738,20 +1740,20 @@ public class SGNode extends SGNodeBase implements PConstants {
 	public void processMouseClicked(MouseEvent event) {
 		boolean trace = false;
 		String tm = null;
-		if (traceMClicked) {
-			PVector mp = getMousePosition();
-			tm = ">> mouseClicked_sys() on " + this + " (" + mp.x + ", " + mp.y + ")";
-			if (!visible) println(tm + " - invisible [" + this + "]");
-		}
+		// if (traceMClicked) {
+		// PVector mp = getMousePosition();
+		// tm = ">> mouseClicked_sys() on " + this + " (" + mp.x + ", " + mp.y + ")";
+		// if (!visible) println(tm + " - invisible [" + this + "]");
+		// }
 		if (!visible) return;
 		if (dispatchMouseEvents && containsMouse()) {
-			if (traceMClicked) println(tm + " - dispatched [" + this + "]");
+			// if (traceMClicked) println(tm + " - dispatched [" + this + "]");
 			event.consumed = true;
 			dispatchMouseClicked(getMousePosition());
 			return;
 		}
 		if (forwardSysMouseEvents && containsMouse()) {
-			if (traceMClicked) println(tm + " - forwarded [" + this + "]");
+			// if (traceMClicked) println(tm + " - forwarded [" + this + "]");
 			for (int i = mouseChildren.size() - 1; i >= 0; i--) {
 				SGNode child = mouseChildren.get(i);
 				if (!child.visible) continue;
@@ -1803,14 +1805,14 @@ public class SGNode extends SGNodeBase implements PConstants {
 		}
 	}
 	
-	private boolean traceMMove = false;
+	// private boolean traceMMove = false;
 	
 	/**
 	 * System method. This method should only be called from SGApp.
 	 */
 	public void processMouseMoved(MouseEvent event, boolean dragged) {
 		if (!visible) return;
-		if (traceMMove) println(">> " + this + ".mouseMoved_sys() - dragged: " + dragged);
+		// if (traceMMove) println(">> " + this + ".mouseMoved_sys() - dragged: " + dragged);
 		if (dispatchMouseEvents) {
 			PVector mousePos = getMousePosition();
 			if (contains_sys(mousePos)) {

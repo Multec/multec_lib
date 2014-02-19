@@ -117,7 +117,7 @@ public class SGButton extends SGRect {
 	public SGButton setIcon(String path) {
 		this.icon = app.loadImage(path);
 		showIcon = true;
-		redraw("SGButton.setIcon(String) [" + this + "]");
+		redraw(); // "SGButton.setIcon(String) [" + this + "]");
 		return this;
 	}
 	
@@ -125,7 +125,7 @@ public class SGButton extends SGRect {
 		if (this.icon != icon) {
 			this.icon = icon;
 			showIcon = true;
-			redraw("SGButton.setIcon(PImage) [" + this + "]");
+			redraw(); // "SGButton.setIcon(PImage) [" + this + "]");
 		}
 		return this;
 	}

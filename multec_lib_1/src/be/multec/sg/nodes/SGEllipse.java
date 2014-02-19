@@ -102,7 +102,7 @@ public class SGEllipse extends SGFigure {
 		if (this.diamX == diamX) return this;
 		this.diamX = diamX;
 		invalidateLocalBounds();
-		redraw("SGEllipse.setDiamX(float) [" + this + "]");
+		redraw(); // "SGEllipse.setDiamX(float) [" + this + "]");
 		return this;
 	}
 	
@@ -121,7 +121,7 @@ public class SGEllipse extends SGFigure {
 		if (this.diamY == diamY) return this;
 		this.diamY = diamY;
 		invalidateLocalBounds();
-		redraw("SGEllipse.setDiamY(float) [" + this + "]");
+		redraw(); // "SGEllipse.setDiamY(float) [" + this + "]");
 		return this;
 	}
 	
@@ -137,7 +137,7 @@ public class SGEllipse extends SGFigure {
 		this.diamX = diamX;
 		this.diamY = diamY;
 		invalidateLocalBounds();
-		redraw("SGEllipse.setDiam(float, float) [" + this + "]");
+		redraw(); // "SGEllipse.setDiam(float, float) [" + this + "]");
 		return this;
 	}
 	
@@ -152,7 +152,7 @@ public class SGEllipse extends SGFigure {
 		this.diamX = diam;
 		this.diamY = diam;
 		invalidateLocalBounds();
-		redraw("SGEllipse.setDiam(float) [" + this + "]");
+		redraw(); // "SGEllipse.setDiam(float) [" + this + "]");
 		return this;
 	}
 	
@@ -173,7 +173,7 @@ public class SGEllipse extends SGFigure {
 		if (this.centerX == centerX) return this;
 		this.centerX = centerX;
 		invalidateLocalBounds();
-		redraw("SGEllipse.setCenterX(float) [" + this + "]");
+		redraw(); // "SGEllipse.setCenterX(float) [" + this + "]");
 		return this;
 	}
 	
@@ -192,7 +192,7 @@ public class SGEllipse extends SGFigure {
 		if (this.centerY == centerY) return this;
 		this.centerY = centerY;
 		invalidateLocalBounds();
-		redraw("SGEllipse.setCenterY(float) [" + this + "]");
+		redraw(); // "SGEllipse.setCenterY(float) [" + this + "]");
 		return this;
 	}
 	
@@ -205,7 +205,7 @@ public class SGEllipse extends SGFigure {
 		this.centerX = centerX;
 		this.centerY = centerY;
 		invalidateLocalBounds();
-		redraw("SGEllipse.setCenter(float, float) [" + this + "]");
+		redraw(); // "SGEllipse.setCenter(float, float) [" + this + "]");
 		return this;
 	}
 	
